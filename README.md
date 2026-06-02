@@ -1,3 +1,7 @@
+<p align="center">
+  <a href="README.md">🇨🇳 中文</a> · <a href="README.en.md">🇬🇧 English</a>
+</p>
+
 # DBDesign — 在线协同数据库设计工具
 
 基于 [DrawDB](https://github.com/1ilit/drawdb) 改造，支持多人实时协作编辑 ER 图的 Web 应用。
