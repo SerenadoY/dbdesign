@@ -4,7 +4,7 @@
 
 # DBDesign — Collaborative Online Database Design Tool
 
-A web application for real-time collaborative ER diagram editing, based on [DrawDB](https://github.com/1ilit/drawdb).
+A web application for real-time collaborative ER diagram editing, based on [DrawDB](https://github.com/drawdb-io/drawdb).
 
 ## Tech Stack
 
@@ -76,6 +76,6 @@ See [`开发进度.md`](开发进度.md) (Chinese).
 
 ## License
 
-AGPL v3. Based on [DrawDB](https://github.com/1ilit/drawdb) (AGPL v3).
+AGPL v3. Based on [DrawDB](https://github.com/drawdb-io/drawdb) (AGPL v3).
 
 Commercial use is allowed, but modified code must remain open source under AGPL v3. If deployed as a network service, users have the right to request the source code.

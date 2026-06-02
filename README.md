@@ -4,7 +4,7 @@
 
 # DBDesign — 在线协同数据库设计工具
 
-基于 [DrawDB](https://github.com/1ilit/drawdb) 改造，支持多人实时协作编辑 ER 图的 Web 应用。
+基于 [DrawDB](https://github.com/drawdb-io/drawdb) 改造，支持多人实时协作编辑 ER 图的 Web 应用。
 
 ## 技术栈
 
@@ -76,6 +76,6 @@ dbdesign/
 
 ## License
 
-AGPL v3. 基于 [DrawDB](https://github.com/1ilit/drawdb) (AGPL v3) 改造。
+AGPL v3. 基于 [DrawDB](https://github.com/drawdb-io/drawdb) (AGPL v3) 改造。
 
 允许商用，但修改后的代码必须同样以 AGPL v3 开源；如果部署为网络服务，用户有权索取源码。
