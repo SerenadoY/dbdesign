@@ -45,14 +45,13 @@ npm run build && npm start   # 单端口 3001（服务端渲染前端）
 # 构建并启动
 docker compose up -d
 
-# 自定义 JWT 密钥
-JWT_SECRET=your-secret-key docker compose up -d
-
 # 查看日志
 docker compose logs -f
 ```
 
 服务监听 `0.0.0.0:3001`，数据库持久化在 named volume `dbdesign-data`。
+
+> 如需自定义 JWT 密钥，在 `docker-compose.yml` 同级目录创建 `.env` 文件：`JWT_SECRET=你的密钥`
 
 ## 项目结构
 

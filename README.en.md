@@ -45,14 +45,13 @@ npm run build && npm start   # Single port 3001 (server-served frontend)
 # Build and start
 docker compose up -d
 
-# Custom JWT secret
-JWT_SECRET=your-secret-key docker compose up -d
-
 # View logs
 docker compose logs -f
 ```
 
 Listens on `0.0.0.0:3001`. Database persisted in named volume `dbdesign-data`.
+
+> To customize the JWT secret, create a `.env` file next to `docker-compose.yml`: `JWT_SECRET=your-secret`
 
 ## Project Structure
 
