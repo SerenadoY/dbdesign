@@ -13,7 +13,7 @@ import userRoutes from "./routes/users.js";
 import { setupSocketHandlers } from "./collab/socket.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const clientDist = resolve(__dirname, "../../client/dist");
+const clientDist = resolve(__dirname, "../client/dist");
 
 const app = express();
 const httpServer = createServer(app);

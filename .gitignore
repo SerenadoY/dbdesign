@@ -3,3 +3,5 @@ node_modules/
 .DS_Store
 server/data/*.db
 dist/
+server/stdout.txt
+server/stderr.txt

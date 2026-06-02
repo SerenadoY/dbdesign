@@ -1,0 +1,15 @@
+services:
+  dbdesign:
+    build: .
+    ports:
+      - "3001:3001"
+    volumes:
+      - dbdesign-data:/app/server/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - DATABASE_URL=./data/dbdesign.db
+
+volumes:
+  dbdesign-data:

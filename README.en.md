@@ -30,6 +30,21 @@ npm run dev:client   # Frontend only
 
 # Production build
 npm run build && npm start   # Single port 3001 (server-served frontend)
+
+## Docker Deployment
+
+```bash
+# Build and start
+docker compose up -d
+
+# Custom JWT secret
+JWT_SECRET=your-secret-key docker compose up -d
+
+# View logs
+docker compose logs -f
+```
+
+Listens on `0.0.0.0:3001`. Database persisted in named volume `dbdesign-data`.
 ```
 
 ## Project Structure
