@@ -7,10 +7,10 @@
 A web application for real-time collaborative ER diagram editing, based on [DrawDB](https://github.com/drawdb-io/drawdb).
 
 <p align="center">
-  <img src="docs/images/login.png" alt="Login page" width="400" />
-  <img src="docs/images/dashboard.png" alt="Dashboard" width="400" />
+  <img src="docs/images/landing.png" alt="Home page" width="800" />
   <br/>
-  <img src="docs/images/editor.png" alt="Editor" width="800" />
+  <img src="docs/images/dashboard.png" alt="Dashboard" width="400" />
+  <img src="docs/images/editor.png" alt="Editor" width="400" />
 </p>
 
 ## Tech Stack

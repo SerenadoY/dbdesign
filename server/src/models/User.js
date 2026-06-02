@@ -9,9 +9,9 @@ export function createUser(username, password, displayName) {
     "INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)",
     [username, hash, displayName || username],
   );
-  saveDbToDisk();
   const result = db.exec("SELECT last_insert_rowid() as id");
   const id = result[0].values[0][0];
+  saveDbToDisk();
   return { id, username, displayName: displayName || username };
 }
 

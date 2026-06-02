@@ -7,10 +7,10 @@
 基于 [DrawDB](https://github.com/drawdb-io/drawdb) 改造，支持多人实时协作编辑 ER 图的 Web 应用。
 
 <p align="center">
-  <img src="docs/images/login.png" alt="登录页" width="400" />
-  <img src="docs/images/dashboard.png" alt="仪表盘" width="400" />
+  <img src="docs/images/landing.png" alt="首页" width="800" />
   <br/>
-  <img src="docs/images/editor.png" alt="编辑器" width="800" />
+  <img src="docs/images/dashboard.png" alt="仪表盘" width="400" />
+  <img src="docs/images/editor.png" alt="编辑器" width="400" />
 </p>
 
 ## 技术栈
