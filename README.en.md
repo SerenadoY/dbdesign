@@ -30,6 +30,7 @@ npm run dev:client   # Frontend only
 
 # Production build
 npm run build && npm start   # Single port 3001 (server-served frontend)
+```
 
 ## Docker Deployment
 
@@ -45,7 +46,6 @@ docker compose logs -f
 ```
 
 Listens on `0.0.0.0:3001`. Database persisted in named volume `dbdesign-data`.
-```
 
 ## Project Structure
 
@@ -89,8 +89,4 @@ dbdesign/
 
 See [`开发进度.md`](开发进度.md) (Chinese).
 
-## License
 
-AGPL v3. Based on [DrawDB](https://github.com/drawdb-io/drawdb) (AGPL v3).
-
-Commercial use is allowed, but modified code must remain open source under AGPL v3. If deployed as a network service, users have the right to request the source code.

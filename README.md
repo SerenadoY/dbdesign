@@ -30,6 +30,7 @@ npm run dev:client   # 仅前端
 
 # 生产构建
 npm run build && npm start   # 单端口 3001（服务端渲染前端）
+```
 
 ## Docker 部署
 
@@ -45,7 +46,6 @@ docker compose logs -f
 ```
 
 服务监听 `0.0.0.0:3001`，数据库持久化在 named volume `dbdesign-data`。
-```
 
 ## 项目结构
 
@@ -89,8 +89,4 @@ dbdesign/
 
 详见 [`开发进度.md`](开发进度.md)。
 
-## License
 
-AGPL v3. 基于 [DrawDB](https://github.com/drawdb-io/drawdb) (AGPL v3) 改造。
-
-允许商用，但修改后的代码必须同样以 AGPL v3 开源；如果部署为网络服务，用户有权索取源码。
