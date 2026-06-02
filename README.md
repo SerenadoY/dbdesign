@@ -72,4 +72,6 @@ dbdesign/
 
 ## License
 
-MIT
+AGPL v3. 基于 [DrawDB](https://github.com/1ilit/drawdb) (AGPL v3) 改造。
+
+允许商用，但修改后的代码必须同样以 AGPL v3 开源；如果部署为网络服务，用户有权索取源码。
