@@ -13,7 +13,12 @@ import userRoutes from "./routes/users.js";
 import { setupSocketHandlers } from "./collab/socket.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const clientDist = resolve(__dirname, "../client/dist");
+
+// Support both local (../../client/dist) and Docker (../client/dist) layouts
+const clientDist =
+  existsSync(resolve(__dirname, "../client/dist"))
+    ? resolve(__dirname, "../client/dist")
+    : resolve(__dirname, "../../client/dist");
 
 const app = express();
 const httpServer = createServer(app);
