@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { listDiagrams, createDiagram, deleteDiagram } from "../api/diagrams";
 import UserMenu from "../components/UserMenu";
+import ReverseEngineeringModal from "../components/ReverseEngineeringModal";
 
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
   const [diagrams, setDiagrams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [showReverse, setShowReverse] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const navigate = useNavigate();
 
@@ -68,13 +70,25 @@ export default function Dashboard() {
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
           <h2 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>我的设计文稿</h2>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="rounded-xl px-5 py-2 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
-            style={{ backgroundColor: "var(--accent)" }}
-          >
-            + 新建文稿
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowReverse(true)}
+              className="rounded-xl border px-5 py-2 text-sm font-medium transition-all duration-200 hover:opacity-80 active:scale-[0.97]"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              逆向数据库
+            </button>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="rounded-xl px-5 py-2 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
+              style={{ backgroundColor: "var(--accent)" }}
+            >
+              + 新建文稿
+            </button>
+          </div>
         </div>
 
         {showCreate && (
@@ -175,6 +189,10 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+        )}
+
+        {showReverse && (
+          <ReverseEngineeringModal onClose={() => setShowReverse(false)} />
         )}
       </main>
     </div>

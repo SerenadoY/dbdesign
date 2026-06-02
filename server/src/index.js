@@ -10,6 +10,7 @@ import { initDb } from "./db/index.js";
 import authRoutes from "./routes/auth.js";
 import diagramRoutes from "./routes/diagrams.js";
 import userRoutes from "./routes/users.js";
+import reverseRoutes from "./routes/reverse.js";
 import { setupSocketHandlers } from "./collab/socket.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -36,6 +37,7 @@ initDb()
     app.use("/api/auth", authRoutes);
     app.use("/api/diagrams", diagramRoutes);
     app.use("/api/users", userRoutes);
+    app.use("/api/diagrams", reverseRoutes);
 
     // Health check
     app.get("/api/health", (req, res) => res.json({ status: "ok" }));
