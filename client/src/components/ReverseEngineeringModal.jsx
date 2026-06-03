@@ -1,17 +1,30 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { reverseEngineerPostgres } from "../api/reverse";
+import { reverseEngineerDatabase } from "../api/reverse";
+
+const DB_TYPES = [
+  { value: "postgresql", label: "PostgreSQL", defaultPort: "5432", defaultUser: "postgres", hasSchema: true, defaultSchema: "public" },
+  { value: "mysql", label: "MySQL", defaultPort: "3306", defaultUser: "root", hasSchema: false },
+];
 
 export default function ReverseEngineeringModal({ onClose }) {
+  const [dbType, setDbType] = useState(DB_TYPES[0]);
   const [host, setHost] = useState("localhost");
-  const [port, setPort] = useState("5432");
+  const [port, setPort] = useState(dbType.defaultPort);
   const [database, setDatabase] = useState("");
-  const [user, setUser] = useState("postgres");
+  const [user, setUser] = useState(dbType.defaultUser);
   const [password, setPassword] = useState("");
-  const [schema, setSchema] = useState("public");
+  const [schema, setSchema] = useState(dbType.defaultSchema || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  const switchDbType = (type) => {
+    setDbType(type);
+    setPort(type.defaultPort);
+    setUser(type.defaultUser);
+    if (type.hasSchema) setSchema(type.defaultSchema);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,14 +37,16 @@ export default function ReverseEngineeringModal({ onClose }) {
 
     setLoading(true);
     try {
-      const result = await reverseEngineerPostgres({
+      const payload = {
+        dbType: dbType.value,
         host: host.trim(),
         port: port.trim(),
         database: database.trim(),
         user: user.trim(),
         password,
-        schema: schema.trim(),
-      });
+      };
+      if (dbType.hasSchema) payload.schema = schema.trim();
+      const result = await reverseEngineerDatabase(payload);
       navigate(`/editor/diagrams/${result.diagram.id}`);
     } catch (err) {
       setError(err.response?.data?.error || err.message || "连接失败，请检查配置");
@@ -57,7 +72,7 @@ export default function ReverseEngineeringModal({ onClose }) {
           逆向工程
         </h2>
         <p className="mb-5 text-xs" style={{ color: "var(--text-muted)" }}>
-          输入 PostgreSQL 连接信息，自动生成 ER 图
+          连接已有数据库，自动生成 ER 图
         </p>
 
         {error && (
@@ -74,6 +89,29 @@ export default function ReverseEngineeringModal({ onClose }) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium" style={{ color: "var(--text-secondary)" }}>数据库类型</label>
+            <div className="flex gap-2">
+              {DB_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => switchDbType(t)}
+                  className={`flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                    dbType.value === t.value ? "ring-2" : "opacity-60 hover:opacity-100"
+                  }`}
+                  style={{
+                    backgroundColor: "var(--bg-primary)",
+                    borderColor: dbType.value === t.value ? "var(--accent)" : "var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="mb-1 block text-xs font-medium" style={{ color: "var(--text-secondary)" }}>主机</label>
@@ -150,19 +188,21 @@ export default function ReverseEngineeringModal({ onClose }) {
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Schema（可选，默认 public）</label>
-            <input
-              type="text" value={schema}
-              onChange={(e) => setSchema(e.target.value)}
-              className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-              style={{
-                backgroundColor: "var(--bg-primary)",
-                borderColor: "var(--border)",
-                color: "var(--text-primary)",
-              }}
-            />
-          </div>
+          {dbType.hasSchema && (
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Schema（可选，默认 {dbType.defaultSchema}）</label>
+              <input
+                type="text" value={schema}
+                onChange={(e) => setSchema(e.target.value)}
+                className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                style={{
+                  backgroundColor: "var(--bg-primary)",
+                  borderColor: "var(--border)",
+                  color: "var(--text-primary)",
+                }}
+              />
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button

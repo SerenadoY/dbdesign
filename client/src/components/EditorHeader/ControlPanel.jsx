@@ -1575,16 +1575,6 @@ export default function ControlPanel({
       },
     },
     help: {
-      docs: {
-        function: () => window.open(`${socials.docs}`, "_blank"),
-        shortcut: "Ctrl+H",
-      },
-      shortcuts: {
-        function: () => window.open(`${socials.docs}/shortcuts`, "_blank"),
-      },
-      ask_on_discord: {
-        function: () => window.open(socials.discord, "_blank"),
-      },
       report_bug: {
         function: () => window.open("/bug-report", "_blank"),
       },
@@ -1616,9 +1606,9 @@ export default function ControlPanel({
   });
   useHotkeys("mod+alt+c", copyAsImage, { preventDefault: true });
   useHotkeys("enter", resetView, { preventDefault: true });
-  useHotkeys("mod+h", () => window.open(socials.docs, "_blank"), {
-    preventDefault: true,
-  });
+  // useHotkeys("mod+h", () => window.open(socials.docs, "_blank"), {
+  //   preventDefault: true,
+  // });
   useHotkeys("mod+alt+w", fitWindow, { preventDefault: true });
   useHotkeys("alt+e", toggleDBMLEditor, { preventDefault: true });
 

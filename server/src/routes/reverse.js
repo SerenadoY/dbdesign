@@ -1,27 +1,34 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.js";
 import { reverseEngineerPostgres } from "../adapters/postgres.js";
+import { reverseEngineerMySQL } from "../adapters/mysql.js";
 import { createDiagram } from "../models/Diagram.js";
 
 const router = Router();
 
 router.post("/reverse", authMiddleware, async (req, res) => {
   try {
-    const { host, port, database, user, password, schema } = req.body;
+    const { dbType, host, port, database, user, password, schema } = req.body;
     if (!database || !user) {
       return res.status(400).json({ error: "database and user are required" });
     }
 
-    const diagramData = await reverseEngineerPostgres({
-      host, port, password, schema,
-      database,
-      user,
-    });
+    let diagramData;
+    switch (dbType) {
+      case "mysql":
+        diagramData = await reverseEngineerMySQL({ host, port, database, user, password });
+        break;
+      case "postgresql":
+        diagramData = await reverseEngineerPostgres({ host, port, database, user, password, schema });
+        break;
+      default:
+        return res.status(400).json({ error: "Unsupported database type. Supported: mysql, postgresql" });
+    }
 
     const diagram = createDiagram(
       req.userId,
       `${database} 数据库逆向`,
-      "postgresql",
+      dbType,
       diagramData,
     );
 
