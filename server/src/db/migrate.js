@@ -57,6 +57,7 @@ export function migrate(db) {
     );
   `);
 
-  // Add version column for existing diagrams (safe no-op if already exists)
+  // Add columns for existing diagrams (safe no-ops if already exists)
   try { db.run("ALTER TABLE diagrams ADD COLUMN version INTEGER NOT NULL DEFAULT 0"); } catch {}
+  try { db.run("ALTER TABLE diagrams ADD COLUMN share_token TEXT"); } catch {}
 }

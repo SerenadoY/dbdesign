@@ -140,6 +140,50 @@ export function restoreSnapshot(diagramId, version) {
   return diagramData;
 }
 
+export function copyDiagram(id, newOwnerId) {
+  const db = getDb();
+  const original = getDiagramById(id);
+  if (!original) return null;
+  const diagramData = JSON.parse(original.diagram_data || "{}");
+  const newData = { ...diagramData, name: diagramData.name || original.title };
+  return createDiagram(
+    newOwnerId || original.owner_id,
+    original.title + " (副本)",
+    original.database_type,
+    newData,
+  );
+}
+
+export function getShareToken(diagramId) {
+  const db = getDb();
+  const result = db.exec("SELECT share_token FROM diagrams WHERE id = ?", [diagramId]);
+  if (!result.length || !result[0].values.length) return null;
+  return result[0].values[0][0];
+}
+
+export function generateShareToken(diagramId) {
+  const db = getDb();
+  const token = nanoid(12);
+  db.run("UPDATE diagrams SET share_token = ? WHERE id = ?", [token, diagramId]);
+  saveDbToDisk();
+  return token;
+}
+
+export function revokeShareToken(diagramId) {
+  const db = getDb();
+  db.run("UPDATE diagrams SET share_token = NULL WHERE id = ?", [diagramId]);
+  saveDbToDisk();
+}
+
+export function getDiagramByShareToken(token) {
+  const db = getDb();
+  const result = db.exec("SELECT * FROM diagrams WHERE share_token = ?", [token]);
+  if (!result.length || !result[0].values.length) return null;
+  const obj = {};
+  result[0].columns.forEach((col, i) => { obj[col] = result[0].values[0][i]; });
+  return obj;
+}
+
 export function deleteDiagram(id) {
   const db = getDb();
   db.run("DELETE FROM diagrams WHERE id = ?", [id]);

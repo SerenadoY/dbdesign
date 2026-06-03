@@ -14,6 +14,7 @@ import { CanvasContextProvider } from "../context/CanvasContext";
 import SidePanel from "./EditorSidePanel/SidePanel";
 import { DB, State } from "../data/constants";
 import { getDiagram as apiGetDiagram, saveDiagramData, createDiagram as apiCreateDiagram } from "../api/diagrams";
+import { getSharedDiagram } from "../api/share";
 import { getSocket } from "../api/collab";
 import {
   useLayout,
@@ -373,6 +374,28 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
     const shareId = searchParams.get("shareId");
     if (shareId) {
       await loadFromGist(shareId, null);
+      return;
+    }
+
+    const shareViewToken = searchParams.get("token");
+    if (searchParams.get("view") === "shared" && shareViewToken) {
+      try {
+        const diagram = await getSharedDiagram(shareViewToken);
+        if (diagram) {
+          setDatabase(diagram.database || DB.GENERIC);
+          setTitle(diagram.name);
+          setTables(diagram.tables);
+          setRelationships(diagram.references);
+          setAreas(diagram.areas);
+          setNotes(diagram.notes);
+          setTransform({ pan: diagram.pan, zoom: diagram.zoom });
+          setLayout((prev) => ({ ...prev, readOnly: true }));
+          if (databases[database]?.hasTypes) setTypes(diagram.types || []);
+          if (databases[database]?.hasEnums) setEnums(diagram.enums || []);
+        }
+      } catch (e) {
+        navigate("/dashboard");
+      }
       return;
     }
 

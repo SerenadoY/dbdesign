@@ -5,6 +5,7 @@ import {
   addCollaborator,
   removeCollaborator,
 } from "../../../api/diagrams";
+import { getShareToken, revokeShareToken } from "../../../api/share";
 import { useParams } from "react-router-dom";
 
 const COLORS = [
@@ -43,6 +44,30 @@ export default function CollabInvite({ setModal }) {
     loadCollaborators();
     if (inputRef.current) inputRef.current.focus();
   }, [loadCollaborators]);
+
+  const [shareToken, setShareToken] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    getShareToken(diagramId).then(setShareToken).catch(() => {});
+  }, [diagramId]);
+
+  const handleCopyLink = async () => {
+    if (!shareToken) {
+      const token = await getShareToken(diagramId);
+      setShareToken(token);
+      await navigator.clipboard.writeText(`${window.location.origin}/shared/${token}`);
+    } else {
+      await navigator.clipboard.writeText(`${window.location.origin}/shared/${shareToken}`);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRevoke = async () => {
+    await revokeShareToken(diagramId);
+    setShareToken(null);
+  };
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -94,6 +119,52 @@ export default function CollabInvite({ setModal }) {
       <h3 className="text-base font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
         邀请协作者
       </h3>
+
+      <div
+        className="mb-5 rounded-xl border p-4"
+        style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border)" }}
+      >
+        <p className="text-xs font-medium mb-2" style={{ color: "var(--text-secondary)" }}>
+          分享链接（只读）
+        </p>
+        {shareToken ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={`${window.location.origin}/shared/${shareToken}`}
+              className="flex-1 rounded-lg border px-3 py-2 text-xs outline-none"
+              style={{
+                backgroundColor: "var(--bg-primary)",
+                borderColor: "var(--border)",
+                color: "var(--text-muted)",
+              }}
+            />
+            <button
+              onClick={handleCopyLink}
+              className="rounded-lg px-3 py-2 text-xs font-medium text-white transition-all"
+              style={{ backgroundColor: "var(--accent)" }}
+            >
+              {copied ? "已复制" : "复制"}
+            </button>
+            <button
+              onClick={handleRevoke}
+              className="rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+              style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+            >
+              撤销
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleCopyLink}
+            className="w-full rounded-lg py-2 text-xs font-medium text-white transition-all"
+            style={{ backgroundColor: "var(--accent)" }}
+          >
+            生成分享链接
+          </button>
+        )}
+      </div>
 
       <div className="relative mb-4">
         <input

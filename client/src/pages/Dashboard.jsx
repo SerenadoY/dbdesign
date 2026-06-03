@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { listDiagrams, createDiagram, deleteDiagram } from "../api/diagrams";
+import { listDiagrams, createDiagram, deleteDiagram, copyDiagram } from "../api/diagrams";
 import UserMenu from "../components/UserMenu";
 import ReverseEngineeringModal from "../components/ReverseEngineeringModal";
 
@@ -41,6 +41,12 @@ export default function Dashboard() {
     const matchDb = !filterDb || (d.database_type || "mysql") === filterDb;
     return matchSearch && matchDb;
   });
+
+  const handleCopy = async (id, e) => {
+    e.stopPropagation();
+    const diagram = await copyDiagram(id);
+    setDiagrams((prev) => [diagram, ...prev]);
+  };
 
   const handleDelete = async (id, e) => {
     e.stopPropagation();
@@ -214,16 +220,28 @@ export default function Dashboard() {
               >
                 <div className="mb-3 flex items-start justify-between">
                   <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>{d.title}</h3>
-                  <button
-                    onClick={(e) => handleDelete(d.id, e)}
-                    className="text-lg leading-none transition-colors"
-                    style={{ color: "var(--text-muted)" }}
-                    onMouseEnter={(e) => { e.target.style.color = "var(--danger)"; }}
-                    onMouseLeave={(e) => { e.target.style.color = "var(--text-muted)"; }}
-                    title="删除"
-                  >
-                    ×
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={(e) => handleCopy(d.id, e)}
+                      className="text-xs leading-none transition-colors rounded px-1.5 py-1"
+                      style={{ color: "var(--text-muted)" }}
+                      onMouseEnter={(e) => { e.target.style.color = "var(--accent)"; }}
+                      onMouseLeave={(e) => { e.target.style.color = "var(--text-muted)"; }}
+                      title="复制"
+                    >
+                      复制
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(d.id, e)}
+                      className="text-lg leading-none transition-colors"
+                      style={{ color: "var(--text-muted)" }}
+                      onMouseEnter={(e) => { e.target.style.color = "var(--danger)"; }}
+                      onMouseLeave={(e) => { e.target.style.color = "var(--text-muted)"; }}
+                      title="删除"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>

@@ -39,6 +39,11 @@ export async function addCollaborator(diagramId, userId, role = "editor") {
   return data;
 }
 
+export async function copyDiagram(id) {
+  const { data } = await api.post(`/diagrams/${id}/copy`);
+  return data.diagram;
+}
+
 export async function removeCollaborator(diagramId, userId) {
   await api.delete(`/diagrams/${diagramId}/collaborators/${userId}`);
 }

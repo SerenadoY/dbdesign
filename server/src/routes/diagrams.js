@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.js";
 import {
   getDiagramsByUser, getDiagramById, createDiagram,
-  updateDiagram, deleteDiagram, addCollaborator,
+  updateDiagram, deleteDiagram, copyDiagram, addCollaborator,
   removeCollaborator, getCollaborators,
 } from "../models/Diagram.js";
 
@@ -80,6 +80,17 @@ router.put("/:id/data", (req, res) => {
     res.json({ status: "saved" });
   } catch (err) {
     console.error("Save diagram data error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/:id/copy", (req, res) => {
+  try {
+    const diagram = copyDiagram(req.params.id, req.userId);
+    if (!diagram) return res.status(404).json({ error: "Diagram not found" });
+    res.status(201).json({ diagram });
+  } catch (err) {
+    console.error("Copy diagram error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

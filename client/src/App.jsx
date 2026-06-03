@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import SharedDiagram from "./pages/SharedDiagram";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useContext(AuthContext);
@@ -40,6 +41,7 @@ export default function App() {
               path="/editor/diagrams/:id"
               element={<ProtectedRoute><Editor /></ProtectedRoute>}
             />
+            <Route path="/shared/:token" element={<SharedDiagram />} />
             <Route path="/editor/templates/:id" element={<Editor />} />
             <Route path="/bug-report" element={<BugReport />} />
             <Route path="/templates" element={<Templates />} />
