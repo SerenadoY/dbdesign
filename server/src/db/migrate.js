@@ -16,6 +16,7 @@ export function migrate(db) {
       owner_id INTEGER NOT NULL,
       diagram_data TEXT NOT NULL DEFAULT '{}',
       database_type TEXT DEFAULT 'mysql',
+      version INTEGER NOT NULL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
@@ -42,5 +43,20 @@ export function migrate(db) {
       FOREIGN KEY (diagram_id) REFERENCES diagrams(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS version_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      diagram_id TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      version INTEGER NOT NULL,
+      diagram_data TEXT NOT NULL,
+      message TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (diagram_id) REFERENCES diagrams(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
   `);
+
+  // Add version column for existing diagrams (safe no-op if already exists)
+  try { db.run("ALTER TABLE diagrams ADD COLUMN version INTEGER NOT NULL DEFAULT 0"); } catch {}
 }

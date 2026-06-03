@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.js";
 import diagramRoutes from "./routes/diagrams.js";
 import userRoutes from "./routes/users.js";
 import reverseRoutes from "./routes/reverse.js";
+import versionRoutes from "./routes/versions.js";
 import { setupSocketHandlers } from "./collab/socket.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -38,6 +39,7 @@ initDb()
     app.use("/api/diagrams", diagramRoutes);
     app.use("/api/users", userRoutes);
     app.use("/api/diagrams", reverseRoutes);
+    app.use("/api/diagrams", versionRoutes);
 
     // Health check
     app.get("/api/health", (req, res) => res.json({ status: "ok" }));

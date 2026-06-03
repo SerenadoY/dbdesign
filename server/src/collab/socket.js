@@ -3,6 +3,7 @@ import { config } from "../config.js";
 import { roomManager } from "./room.js";
 import { mergeDelta } from "./engine.js";
 import { updateDiagram, getDiagramById } from "../models/Diagram.js";
+import { getDb, saveDbToDisk } from "../db/index.js";
 
 export function setupSocketHandlers(io) {
   io.use((socket, next) => {
@@ -65,6 +66,14 @@ export function setupSocketHandlers(io) {
       updateDiagram(currentDiagramId, { diagramData: newData });
 
       const newVersion = roomManager.incrementVersion(currentDiagramId);
+
+      // Log operation
+      const db = getDb();
+      db.run(
+        "INSERT INTO operation_logs (diagram_id, user_id, operation, version) VALUES (?, ?, ?, ?)",
+        [currentDiagramId, socket.userId, JSON.stringify(delta), newVersion],
+      );
+      saveDbToDisk();
 
       socket.to(currentDiagramId).emit("delta", {
         delta,

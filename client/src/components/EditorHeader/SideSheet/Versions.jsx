@@ -1,16 +1,14 @@
-import { useCallback, useContext, useEffect, useState, useMemo } from "react";
-import { IdContext } from "../../Workspace";
+import { useCallback, useEffect, useState, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Spin, Steps, Tag, Toast, Tooltip } from "@douyinfe/semi-ui";
+import { Button, Spin, Steps, Tag, Toast } from "@douyinfe/semi-ui";
 import { IconPlus } from "@douyinfe/semi-icons";
 import {
-  create,
-  getCommitsWithFile,
+  listVersions,
+  recordVersion,
   getVersion,
-  patch,
-  get,
-  VERSION_FILENAME,
-} from "../../../api/gists";
+  restoreVersion,
+} from "../../../api/versions";
 import _ from "lodash";
 import { DateTime } from "luxon";
 import {
@@ -19,18 +17,15 @@ import {
   useEnums,
   useLayout,
   useNotes,
-  useTransform,
   useTypes,
+  useTransform,
 } from "../../../hooks";
 import { databases } from "../../../data/databases";
-import { loadCache, saveCache } from "../../../utils/cache";
-import Migration from "./Migration";
-import { DB } from "../../../data/constants";
 
 const LIMIT = 10;
 
 export default function Versions({ open, title, setTitle }) {
-  const { gistId, setGistId, version, setVersion } = useContext(IdContext);
+  const { id: diagramId } = useParams();
   const { areas, setAreas } = useAreas();
   const { setLayout } = useLayout();
   const { database, tables, relationships, setTables, setRelationships } =
@@ -43,70 +38,31 @@ export default function Versions({ open, title, setTitle }) {
   const [isLoading, setIsLoading] = useState(false);
   const [versions, setVersions] = useState([]);
   const [hasMore, setHasMore] = useState(false);
-  const [cursor, setCursor] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [loadingVersion, setLoadingVersion] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [versionToCompareTo, setVersionToCompareTo] = useState(null);
 
-  const cacheRef = useMemo(() => loadCache(), []);
-
-  const diagramToString = useCallback(() => {
-    return JSON.stringify({
-      title,
-      tables,
-      relationships: relationships,
-      notes: notes,
-      subjectAreas: areas,
-      database: database,
-      ...(databases[database].hasTypes && { types: types }),
-      ...(databases[database].hasEnums && { enums: enums }),
-      transform: transform,
-    });
-  }, [
-    areas,
-    notes,
-    tables,
-    relationships,
-    database,
-    title,
-    enums,
-    types,
-    transform,
-  ]);
-
-  const currentStep = useMemo(() => {
-    if (!version) return 0;
-    return versions.findIndex((v) => v.version === version);
-  }, [version, versions]);
-
   const loadVersion = useCallback(
-    async (sha) => {
+    async (versionNum) => {
       try {
-        setLoadingVersion(sha);
-        const version = await getVersion(gistId, sha);
-        setVersion(sha);
+        setLoadingVersion(versionNum);
+        const v = await getVersion(diagramId, versionNum);
         setLayout((prev) => ({ ...prev, readOnly: true }));
 
-        if (!version.data.files[VERSION_FILENAME]) {
-          return;
+        const d = v.diagramData;
+
+        setTables(d.tables || []);
+        setRelationships(d.relationships || []);
+        setAreas(d.subjectAreas || []);
+        setNotes(d.notes || []);
+        if (d.title) setTitle(d.title);
+
+        if (databases[database]?.hasTypes) {
+          setTypes(d.types || []);
         }
-
-        const content = version.data.files[VERSION_FILENAME].content;
-        const parsedDiagram = JSON.parse(content);
-
-        setTables(parsedDiagram.tables);
-        setRelationships(parsedDiagram.relationships);
-        setAreas(parsedDiagram.subjectAreas);
-        setNotes(parsedDiagram.notes);
-        setTitle(parsedDiagram.title);
-
-        if (databases[database].hasTypes) {
-          setTypes(parsedDiagram.types);
-        }
-
-        if (databases[database].hasEnums) {
-          setEnums(parsedDiagram.enums);
+        if (databases[database]?.hasEnums) {
+          setEnums(d.enums || []);
         }
       } catch (e) {
         Toast.error(t("failed_to_load_diagram"));
@@ -114,94 +70,51 @@ export default function Versions({ open, title, setTitle }) {
         setLoadingVersion(null);
       }
     },
-    [
-      t,
-      gistId,
-      setTables,
-      setRelationships,
-      setAreas,
-      setVersion,
-      setLayout,
-      database,
-      setNotes,
-      setTypes,
-      setEnums,
-      setTitle,
-    ],
+    [diagramId, setTables, setRelationships, setAreas, setNotes, setTypes, setEnums, setTitle, setLayout, database, t],
   );
 
   const getRevisions = useCallback(
-    async (cursorParam) => {
+    async () => {
       try {
-        if (!gistId) return;
-
+        if (!diagramId) return;
         setIsLoading(true);
-
-        const cached = cacheRef[gistId];
-        if (cached && !cursorParam) {
-          setVersions(cached.versions);
-          setCursor(cached.cursor);
-          setHasMore(cached.hasMore);
-          setIsLoading(false);
-          return;
-        }
-
-        const res = await getCommitsWithFile(
-          gistId,
-          VERSION_FILENAME,
-          LIMIT,
-          cursorParam,
-        );
-
-        const newVersions = cursorParam ? [...versions, ...res.data] : res.data;
-
-        setVersions(newVersions);
-        setHasMore(res.pagination.hasMore);
-        setCursor(res.pagination.cursor);
-
-        cacheRef[gistId] = {
-          versions: newVersions,
-          cursor: res.pagination.cursor,
-          hasMore: res.pagination.hasMore,
-        };
-        saveCache(cacheRef);
+        const list = await listVersions(diagramId);
+        setVersions(list);
+        setHasMore(list.length >= LIMIT);
       } catch (e) {
         Toast.error(t("oops_smth_went_wrong"));
       } finally {
         setIsLoading(false);
       }
     },
-    [gistId, versions, t, cacheRef],
+    [diagramId, t],
   );
 
-  const hasDiagramChanged = async () => {
-    if (!gistId) return true;
-
-    const previousVersion = await get(gistId);
-
-    if (!previousVersion.data.files[VERSION_FILENAME]) {
-      return true;
-    }
-
-    const previousDiagram = JSON.parse(
-      previousVersion.data.files[VERSION_FILENAME]?.content,
-    );
-    const currentDiagram = {
+  const diagramToString = useCallback(() => {
+    return JSON.stringify({
       title,
       tables,
-      relationships: relationships,
-      notes: notes,
+      relationships,
+      notes,
       subjectAreas: areas,
-      database: database,
-      ...(databases[database].hasTypes && { types: types }),
-      ...(databases[database].hasEnums && { enums: enums }),
-      transform: transform,
-    };
+      database,
+      ...(databases[database]?.hasTypes && { types }),
+      ...(databases[database]?.hasEnums && { enums }),
+      transform,
+    });
+  }, [areas, notes, tables, relationships, database, title, enums, types, transform]);
 
-    return !_.isEqual(previousDiagram, currentDiagram);
-  };
+  const currentDiagram = useMemo(() => {
+    try { return JSON.parse(diagramToString()); } catch { return {}; }
+  }, [diagramToString]);
 
-  const recordVersion = async () => {
+  const hasDiagramChanged = useCallback(async () => {
+    if (!versions.length) return true;
+    const latest = await getVersion(diagramId, versions[0].version);
+    return !_.isEqual(latest.diagramData, currentDiagram);
+  }, [diagramId, versions, currentDiagram]);
+
+  const recordVersionFn = async () => {
     try {
       setIsRecording(true);
       const hasChanges = await hasDiagramChanged();
@@ -209,16 +122,7 @@ export default function Versions({ open, title, setTitle }) {
         Toast.info(t("no_changes_to_record"));
         return;
       }
-      if (gistId) {
-        await patch(gistId, VERSION_FILENAME, diagramToString());
-      } else {
-        const id = await create(VERSION_FILENAME, diagramToString());
-        setGistId(id);
-      }
-
-      delete cacheRef[gistId];
-      saveCache(cacheRef);
-
+      await recordVersion(diagramId);
       await getRevisions();
     } catch (e) {
       Toast.error(t("failed_to_record_version"));
@@ -227,40 +131,15 @@ export default function Versions({ open, title, setTitle }) {
     }
   };
 
-  const getVersionToCompareTo = useCallback(async () => {
-    if (!selectedVersion) return null;
-
-    const currentIndex = versions.findIndex(
-      (v) => v.version === selectedVersion,
-    );
-
-    if (currentIndex === -1) return null;
-
-    if (currentIndex === versions.length - 1 && hasMore) {
-      const res = await getCommitsWithFile(gistId, VERSION_FILENAME, 1, cursor);
-      const version = res.data.length ? res.data[0].version : "null";
-
-      if (version === selectedVersion) return null;
-
-      return version;
-    } else {
-      return versions[currentIndex + 1]?.version || "null";
-    }
-  }, [selectedVersion, versions, gistId, cursor, hasMore]);
+  const currentStep = useMemo(() => {
+    return versions.findIndex((v) => v.version === selectedVersion);
+  }, [selectedVersion, versions]);
 
   useEffect(() => {
-    const getVersionToCompare = async () => {
-      const versionToCompare = await getVersionToCompareTo();
-      setVersionToCompareTo(versionToCompare);
-    };
-    getVersionToCompare();
-  }, [selectedVersion, getVersionToCompareTo]);
-
-  useEffect(() => {
-    if (gistId && open) {
+    if (diagramId && open) {
       getRevisions();
     }
-  }, [gistId, open, getRevisions]);
+  }, [diagramId, open, getRevisions]);
 
   return (
     <div className="mx-5 relative h-full">
@@ -269,16 +148,16 @@ export default function Versions({ open, title, setTitle }) {
           block
           icon={isRecording ? <Spin /> : <IconPlus />}
           disabled={isLoading || isRecording}
-          onClick={recordVersion}
+          onClick={recordVersionFn}
         >
           {t("record_version")}
         </Button>
       </div>
 
-      {(!gistId || !versions.length) && !isLoading && (
+      {(!diagramId || !versions.length) && !isLoading && (
         <div className="my-3">{t("no_saved_versions")}</div>
       )}
-      {gistId && (
+      {diagramId && (
         <div className="my-2 overflow-y-auto">
           <Steps direction="vertical" type="basic" current={currentStep}>
             {versions.map((r) => (
@@ -288,41 +167,10 @@ export default function Versions({ open, title, setTitle }) {
                 className="group hover-1 first:!pt-2"
                 title={
                   <div className="flex justify-between items-center w-full">
-                    <Tag>{r.version.substring(0, 7)}</Tag>
-                    {database === DB.GENERIC ? (
-                      <Tooltip content={t("migration_not_supported_generic")}>
-                        <Button
-                          size="small"
-                          theme="borderless"
-                          className="!text-xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedVersion(r.version);
-                          }}
-                          disabled={database === DB.GENERIC}
-                        >
-                          {t("generate_migration")}
-                        </Button>
-                      </Tooltip>
-                    ) : (
-                      <Button
-                        size="small"
-                        theme="borderless"
-                        className="!text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedVersion(r.version);
-                        }}
-                        disabled={database === DB.GENERIC}
-                      >
-                        {t("generate_migration")}
-                      </Button>
-                    )}
+                    <Tag>{r.user_name || t("version") + " #" + r.version}</Tag>
                   </div>
                 }
-                description={`${t("committed_at")} ${DateTime.fromISO(
-                  r.committed_at,
-                )
+                description={`${t("committed_at")} ${DateTime.fromISO(r.created_at)
                   .setLocale(i18n.language)
                   .toLocaleString(DateTime.DATETIME_MED)}`}
                 icon={
@@ -343,18 +191,6 @@ export default function Versions({ open, title, setTitle }) {
           <div>{t("loading")}</div>
         </div>
       )}
-      {hasMore && !isLoading && (
-        <div className="text-center">
-          <Button onClick={() => getRevisions(cursor)}>{t("load_more")}</Button>
-        </div>
-      )}
-
-      <Migration
-        gistId={gistId}
-        selectedVersion={selectedVersion}
-        versionToCompareTo={versionToCompareTo || ""}
-        setSelectedVersion={setSelectedVersion}
-      />
     </div>
   );
 }

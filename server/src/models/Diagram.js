@@ -85,6 +85,61 @@ export function updateDiagram(id, updates) {
   return getDiagramById(id);
 }
 
+export function incrementVersion(diagramId) {
+  const db = getDb();
+  db.run("UPDATE diagrams SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?", [diagramId]);
+  saveDbToDisk();
+  const result = db.exec("SELECT version FROM diagrams WHERE id = ?", [diagramId]);
+  if (!result.length || !result[0].values.length) return 0;
+  return result[0].values[0][0];
+}
+
+export function saveSnapshot(diagramId, userId, diagramData, message) {
+  const db = getDb();
+  const version = incrementVersion(diagramId);
+  db.run(
+    "INSERT INTO version_snapshots (diagram_id, user_id, version, diagram_data, message) VALUES (?, ?, ?, ?, ?)",
+    [diagramId, userId, version, JSON.stringify(diagramData), message || ""],
+  );
+  saveDbToDisk();
+  return { version };
+}
+
+export function getVersions(diagramId) {
+  const db = getDb();
+  return rowsToArray(
+    db.exec(
+      `SELECT vs.id, vs.version, vs.message, vs.created_at,
+              u.display_name as user_name
+       FROM version_snapshots vs
+       LEFT JOIN users u ON vs.user_id = u.id
+       WHERE vs.diagram_id = ?
+       ORDER BY vs.version DESC`,
+      [diagramId],
+    ),
+  );
+}
+
+export function getSnapshot(diagramId, version) {
+  const db = getDb();
+  const result = db.exec(
+    "SELECT * FROM version_snapshots WHERE diagram_id = ? AND version = ?",
+    [diagramId, version],
+  );
+  if (!result.length || !result[0].values.length) return null;
+  const obj = {};
+  result[0].columns.forEach((col, i) => { obj[col] = result[0].values[0][i]; });
+  return obj;
+}
+
+export function restoreSnapshot(diagramId, version) {
+  const snapshot = getSnapshot(diagramId, version);
+  if (!snapshot) return null;
+  const diagramData = JSON.parse(snapshot.diagram_data || "{}");
+  updateDiagram(diagramId, { diagramData });
+  return diagramData;
+}
+
 export function deleteDiagram(id) {
   const db = getDb();
   db.run("DELETE FROM diagrams WHERE id = ?", [id]);
