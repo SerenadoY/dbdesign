@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import { Slot, useExtensions } from "../../context/ExtensionsContext";
+import TableSearch from "../TableSearch";
 import { createPortal } from "react-dom";
 import {
   IconCaretdown,
@@ -1623,6 +1624,7 @@ export default function ControlPanel({
             {header()}
             <div className="flex items-center gap-2 me-7">
               <Slot name="header-actions-start" />
+              <TableSearch />
               <Button
                 type="secondary"
                 className="!text-base !pe-6 !ps-5 !py-[18px] !rounded-md"
