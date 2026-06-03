@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useRef, useEffect, useCallback } from "react";
 import { Slot, useExtensions } from "../../context/ExtensionsContext";
 import TableSearch from "../TableSearch";
 import { createPortal } from "react-dom";
@@ -14,6 +14,7 @@ import {
 } from "@douyinfe/semi-icons";
 import { Link, useMatch, useParams } from "react-router-dom";
 import Collaborators from "../Collaborators";
+import { updateDiagramMeta } from "../../api/diagrams";
 import icon from "../../assets/icon_dark_64.png";
 import {
   Button,
@@ -102,6 +103,9 @@ export default function ControlPanel({
   const [modal, setModal] = useState(MODAL.NONE);
   const [sidesheet, setSidesheet] = useState(SIDESHEET.NONE);
   const [showEditName, setShowEditName] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editTitleValue, setEditTitleValue] = useState("");
+  const titleInputRef = useRef(null);
   const [importDb, setImportDb] = useState("");
   const [exportData, setExportData] = useState({
     data: null,
@@ -1901,20 +1905,55 @@ export default function ControlPanel({
                 onPointerEnter={(e) => e.isPrimary && setShowEditName(true)}
                 onPointerLeave={(e) => e.isPrimary && setShowEditName(false)}
                 onPointerDown={(e) => {
-                  // Required for onPointerLeave to trigger when a touch pointer leaves
-                  // https://stackoverflow.com/a/70976017/1137077
                   e.target.releasePointerCapture(e.pointerId);
                 }}
-                onClick={!layout.readOnly && (() => setModal(MODAL.RENAME))}
               >
-                <span>{(isTemplate ? "Templates / " : "Diagrams / ") + title}</span>
+                {editingTitle && !layout.readOnly ? (
+                  <input
+                    ref={titleInputRef}
+                    type="text"
+                    value={editTitleValue}
+                    onChange={(e) => setEditTitleValue(e.target.value)}
+                    onBlur={async () => {
+                      setEditingTitle(false);
+                      const trimmed = editTitleValue.trim();
+                      if (trimmed && trimmed !== title && diagramId) {
+                        setTitle(trimmed);
+                        try { await updateDiagramMeta(diagramId, { title: trimmed }); } catch {}
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.currentTarget.blur();
+                      if (e.key === "Escape") setEditingTitle(false);
+                    }}
+                    className="bg-transparent border-0 border-b-2 outline-none text-xl font-medium"
+                    style={{
+                      borderColor: "var(--accent)",
+                      color: "var(--text-primary)",
+                      width: Math.max(120, editTitleValue.length * 12 + 30) + "px",
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className={!layout.readOnly ? "cursor-pointer" : ""}
+                    onClick={() => {
+                      if (!layout.readOnly) {
+                        setEditTitleValue(title);
+                        setEditingTitle(true);
+                      }
+                    }}
+                  >
+                    {(isTemplate ? "Templates / " : "Diagrams / ") + title}
+                  </span>
+                )}
                 {version && (
                   <Tag className="mt-1" color="blue" size="small">
                     {version.substring(0, 7)}
                   </Tag>
                 )}
               </div>
-              {(showEditName || modal === MODAL.RENAME) && !layout.readOnly && (
+              {(editingTitle || showEditName || modal === MODAL.RENAME) && !layout.readOnly && !editingTitle && (
                 <IconEdit />
               )}
             </div>

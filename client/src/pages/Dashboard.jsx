@@ -48,6 +48,10 @@ export default function Dashboard() {
     setDiagrams((prev) => [diagram, ...prev]);
   };
 
+  const getTableCount = (d) => {
+    try { return JSON.parse(d.diagram_data || "{}").tables?.length || 0; } catch { return 0; }
+  };
+
   const handleDelete = async (id, e) => {
     e.stopPropagation();
     if (!confirm("确定删除此设计文稿？")) return;
@@ -245,7 +249,7 @@ export default function Dashboard() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    数据库: {d.database_type || "mysql"}
+                    数据库: {d.database_type || "mysql"} · {getTableCount(d)} 张表
                   </p>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                     更新于 {new Date(d.updated_at).toLocaleString("zh-CN")}
