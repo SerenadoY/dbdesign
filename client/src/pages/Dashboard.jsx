@@ -12,6 +12,8 @@ export default function Dashboard() {
   const [showCreate, setShowCreate] = useState(false);
   const [showReverse, setShowReverse] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [search, setSearch] = useState("");
+  const [filterDb, setFilterDb] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,6 +33,14 @@ export default function Dashboard() {
     setNewTitle("");
     navigate(`/editor/diagrams/${diagram.id}`);
   };
+
+  const dbTypes = [...new Set(diagrams.map((d) => d.database_type || "mysql"))];
+
+  const filtered = diagrams.filter((d) => {
+    const matchSearch = !search || d.title.toLowerCase().includes(search.toLowerCase());
+    const matchDb = !filterDb || (d.database_type || "mysql") === filterDb;
+    return matchSearch && matchDb;
+  });
 
   const handleDelete = async (id, e) => {
     e.stopPropagation();
@@ -91,6 +101,46 @@ export default function Dashboard() {
           </div>
         </div>
 
+        <div className="mb-6 flex gap-3">
+          <div className="relative flex-1">
+            <svg
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              style={{ color: "var(--text-muted)" }}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+            <input
+              type="text" value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="搜索文稿名称..."
+              className="w-full rounded-xl border px-10 py-2.5 text-sm outline-none transition-all duration-200"
+              style={{
+                backgroundColor: "var(--bg-surface)",
+                borderColor: "var(--border)",
+                color: "var(--text-primary)",
+              }}
+              onFocus={(e) => { e.target.style.borderColor = "var(--accent)"; }}
+              onBlur={(e) => { e.target.style.borderColor = "var(--border)"; }}
+            />
+          </div>
+          <select
+            value={filterDb}
+            onChange={(e) => setFilterDb(e.target.value)}
+            className="rounded-xl border px-4 py-2.5 text-sm outline-none"
+            style={{
+              backgroundColor: "var(--bg-surface)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
+          >
+            <option value="">全部数据库</option>
+            {dbTypes.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+
         {showCreate && (
           <div
             className="mb-6 rounded-2xl border p-5"
@@ -137,7 +187,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {diagrams.length === 0 ? (
+        {filtered.length === 0 ? (
           <div
             className="rounded-2xl border p-16 text-center"
             style={{
@@ -146,11 +196,11 @@ export default function Dashboard() {
               color: "var(--text-muted)",
             }}
           >
-            还没有设计文稿，点击「新建文稿」开始创建
+            {diagrams.length === 0 ? "还没有设计文稿，点击「新建文稿」开始创建" : "没有匹配的文稿"}
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {diagrams.map((d) => (
+            {filtered.map((d) => (
               <div
                 key={d.id}
                 onClick={() => navigate(`/editor/diagrams/${d.id}`)}
