@@ -1,4 +1,4 @@
-import { useContext, useState, useRef, useEffect, useCallback } from "react";
+import { useContext, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Slot, useExtensions } from "../../context/ExtensionsContext";
 import TableSearch from "../TableSearch";
 import { createPortal } from "react-dom";
@@ -1852,6 +1852,20 @@ export default function ControlPanel({
     );
   }
 
+  function relativeTime(dateStr) {
+    if (!dateStr) return "";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    if (diff < 0) return "";
+    const sec = Math.floor(diff / 1000);
+    if (sec < 10) return "刚刚";
+    if (sec < 60) return `${sec}秒前`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}分钟前`;
+    const hour = Math.floor(min / 60);
+    if (hour < 24) return `${hour}小时前`;
+    return new Date(dateStr).toLocaleString("zh-CN");
+  }
+
   function getState() {
     switch (saveState) {
       case State.NONE:
@@ -1859,7 +1873,8 @@ export default function ControlPanel({
       case State.LOADING:
         return t("loading");
       case State.SAVED:
-        return `${t("last_saved")} ${lastSaved}`;
+        const timeStr = relativeTime(lastSaved);
+        return `${t("last_saved")} ${timeStr}`;
       case State.SAVING:
         return t("saving");
       case State.ERROR:

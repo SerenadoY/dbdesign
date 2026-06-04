@@ -1,9 +1,10 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { listDiagrams, createDiagram, deleteDiagram, copyDiagram } from "../api/diagrams";
 import UserMenu from "../components/UserMenu";
 import ReverseEngineeringModal from "../components/ReverseEngineeringModal";
+import { Toast } from "@douyinfe/semi-ui";
 
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
@@ -14,6 +15,7 @@ export default function Dashboard() {
   const [newTitle, setNewTitle] = useState("");
   const [search, setSearch] = useState("");
   const [filterDb, setFilterDb] = useState("");
+  const [sortBy, setSortBy] = useState("updated_desc");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,21 +33,34 @@ export default function Dashboard() {
     });
     setShowCreate(false);
     setNewTitle("");
+    Toast.success("已创建");
     navigate(`/editor/diagrams/${diagram.id}`);
   };
 
   const dbTypes = [...new Set(diagrams.map((d) => d.database_type || "mysql"))];
 
-  const filtered = diagrams.filter((d) => {
-    const matchSearch = !search || d.title.toLowerCase().includes(search.toLowerCase());
-    const matchDb = !filterDb || (d.database_type || "mysql") === filterDb;
-    return matchSearch && matchDb;
-  });
+  const filtered = useMemo(() => {
+    let list = diagrams.filter((d) => {
+      const matchSearch = !search || d.title.toLowerCase().includes(search.toLowerCase());
+      const matchDb = !filterDb || (d.database_type || "mysql") === filterDb;
+      return matchSearch && matchDb;
+    });
+    switch (sortBy) {
+      case "title_asc": list.sort((a, b) => a.title.localeCompare(b.title)); break;
+      case "title_desc": list.sort((a, b) => b.title.localeCompare(a.title)); break;
+      case "created_asc": list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); break;
+      case "created_desc": list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); break;
+      case "updated_asc": list.sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at)); break;
+      default: list.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)); break;
+    }
+    return list;
+  }, [diagrams, search, filterDb, sortBy]);
 
   const handleCopy = async (id, e) => {
     e.stopPropagation();
     const diagram = await copyDiagram(id);
     setDiagrams((prev) => [diagram, ...prev]);
+    Toast.success("已复制");
   };
 
   const getTableCount = (d) => {
@@ -57,6 +72,7 @@ export default function Dashboard() {
     if (!confirm("确定删除此设计文稿？")) return;
     await deleteDiagram(id);
     setDiagrams((prev) => prev.filter((d) => d.id !== id));
+    Toast.success("已删除");
   };
 
   if (loading) {
@@ -148,6 +164,23 @@ export default function Dashboard() {
             {dbTypes.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-xl border px-3 py-2.5 text-sm outline-none"
+            style={{
+              backgroundColor: "var(--bg-surface)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
+          >
+            <option value="updated_desc">最新更新</option>
+            <option value="updated_asc">最早更新</option>
+            <option value="created_desc">最近创建</option>
+            <option value="created_asc">最早创建</option>
+            <option value="title_asc">名称 A-Z</option>
+            <option value="title_desc">名称 Z-A</option>
           </select>
         </div>
 

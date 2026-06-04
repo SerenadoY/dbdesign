@@ -134,7 +134,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
           navigate(`/editor/diagrams/${targetId}`, { replace: true });
         }
         setSaveState(State.SAVED);
-        setLastSaved(new Date().toLocaleString());
+        setLastSaved(new Date().toISOString());
       } catch (err) {
         console.warn("cloud autosave failed:", err);
         if (err?.response?.status === 402) {
@@ -154,7 +154,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
       );
       navigate(`/editor/diagrams/${diagram.id}`, { replace: true });
       setSaveState(State.SAVED);
-      setLastSaved(new Date().toLocaleString());
+      setLastSaved(new Date().toISOString());
     } else {
       await saveDiagramData(loadedDiagramId, {
         database,
@@ -172,7 +172,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
         ...(databases[database].hasTypes && { types }),
       });
       setSaveState(State.SAVED);
-      setLastSaved(new Date().toLocaleString());
+      setLastSaved(new Date().toISOString());
     }
   }, [
     cloudOnly,
