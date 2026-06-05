@@ -485,6 +485,18 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
   }, [load]);
 
   useEffect(() => {
+    if (layout.readOnly) return;
+    const onBeforeUnload = (e) => {
+      if (saveState === State.SAVING) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [saveState, layout.readOnly]);
+
+  useEffect(() => {
     if (!loadedDiagramId || cloudOnly) return;
     const socket = getSocket();
     if (socket) {

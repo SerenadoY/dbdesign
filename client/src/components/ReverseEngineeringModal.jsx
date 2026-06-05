@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { reverseEngineerDatabase } from "../api/reverse";
+import { reverseEngineerDatabase, testConnection } from "../api/reverse";
 
 const DB_TYPES = [
   { value: "postgresql", label: "PostgreSQL", defaultPort: "5432", defaultUser: "postgres", hasSchema: true, defaultSchema: "public" },
@@ -17,6 +17,8 @@ export default function ReverseEngineeringModal({ onClose }) {
   const [schema, setSchema] = useState(dbType.defaultSchema || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
   const navigate = useNavigate();
 
   const switchDbType = (type) => {
@@ -24,6 +26,25 @@ export default function ReverseEngineeringModal({ onClose }) {
     setPort(type.defaultPort);
     setUser(type.defaultUser);
     if (type.hasSchema) setSchema(type.defaultSchema);
+  };
+
+  const handleTest = async () => {
+    if (!database.trim()) { setTestResult({ success: false, error: "请先输入数据库名" }); return; }
+    setTesting(true);
+    setTestResult(null);
+    setError("");
+    try {
+      const res = await testConnection({
+        dbType: dbType.value,
+        host: host.trim(), port: port.trim(), database: database.trim(),
+        user: user.trim(), password,
+      });
+      setTestResult(res);
+    } catch (err) {
+      setTestResult({ success: false, error: err.response?.data?.error || err.message || "连接测试失败" });
+    } finally {
+      setTesting(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -204,7 +225,33 @@ export default function ReverseEngineeringModal({ onClose }) {
             </div>
           )}
 
+          {testResult && (
+            <div
+              className="rounded-xl px-4 py-2 text-sm flex items-center gap-2"
+              style={{
+                backgroundColor: testResult.success ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+                color: testResult.success ? "var(--success, #10b981)" : "var(--danger)",
+                border: `1px solid ${testResult.success ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`,
+              }}
+            >
+              <i className={`fa-solid fa-${testResult.success ? "check" : "xmark"} fa-xs`} />
+              {testResult.success ? "连接成功" : testResult.error}
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={handleTest}
+              disabled={loading || testing}
+              className="rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:opacity-80 disabled:opacity-50"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              {testing ? "测试中..." : "测试连接"}
+            </button>
             <button
               type="submit"
               disabled={loading}

@@ -6,21 +6,28 @@ import { useUndoRedo } from "../../../hooks";
 import { getOperations } from "../../../api/versions";
 import { DateTime } from "luxon";
 
+const TARGET_LABELS = {
+  table: "表",
+  field: "字段",
+  relationship: "关系",
+  note: "备注",
+  area: "区域",
+  database: "数据库",
+};
+
 const OP_LABELS = {
   create: "创建",
   delete: "删除",
   update: "更新",
 };
 
-function getOpLabel(op) {
+function getOpLabel(op, entityName) {
   try {
     const parsed = typeof op === "string" ? JSON.parse(op) : op;
-    const target = parsed?.target || "";
-    const action = parsed?.action || "";
-    const entity = parsed?.entityId || "";
-    const label = OP_LABELS[action] || action;
-    const name = typeof entity === "string" ? entity.substring(0, 8) : "";
-    return `${label} ${target} ${name}`.trim();
+    const target = TARGET_LABELS[parsed?.target] || parsed?.target || "";
+    const action = OP_LABELS[parsed?.action] || parsed?.action || "";
+    const name = entityName || "";
+    return `${action}${target} ${name}`.trim();
   } catch {
     return "操作";
   }
@@ -63,7 +70,7 @@ export default function Timeline() {
               <i className="block fa-regular fa-circle fa-xs" style={{ color: "var(--text-muted)" }} />
               <div className="ms-2 flex-1 min-w-0">
                 <span className="text-sm" style={{ color: "var(--text-primary)" }}>
-                  {getOpLabel(op.operation)}
+                  {getOpLabel(op.operation, op.entity_name)}
                 </span>
                 <span className="ms-2 text-xs" style={{ color: "var(--text-muted)" }}>
                   {op.user_name || ""}

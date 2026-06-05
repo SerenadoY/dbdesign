@@ -221,11 +221,38 @@ export function getCollaborators(diagramId) {
   );
 }
 
+function resolveEntityName(deltaJson, diagramData) {
+  try {
+    const delta = typeof deltaJson === "string" ? JSON.parse(deltaJson) : deltaJson;
+    if (delta.target === "table") {
+      const table = (diagramData.tables || []).find((t) => t.id === delta.entityId);
+      return table?.name || "";
+    }
+    if (delta.target === "relationship") {
+      const rel = (diagramData.relationships || []).find((r) => r.id === delta.entityId);
+      return rel?.name || "";
+    }
+    if (delta.target === "area") {
+      const area = (diagramData.subjectAreas || []).find((a) => a.id === delta.entityId);
+      return area?.name || "";
+    }
+    return "";
+  } catch {
+    return "";
+  }
+}
+
 export function getOperations(diagramId, limit = 50) {
   const db = getDb();
-  return rowsToArray(
+  const diagram = getDiagramById(diagramId);
+  let diagramData = {};
+  if (diagram) {
+    try { diagramData = JSON.parse(diagram.diagram_data || "{}"); } catch {}
+  }
+
+  const rows = rowsToArray(
     db.exec(
-      `SELECT ol.id, ol.version, ol.operation, ol.created_at,
+      `SELECT ol.id, ol.version, ol.operation, ol.created_at, ol.entity_name,
               u.display_name as user_name
        FROM operation_logs ol
        LEFT JOIN users u ON ol.user_id = u.id
@@ -235,4 +262,11 @@ export function getOperations(diagramId, limit = 50) {
       [diagramId, limit],
     ),
   );
+
+  return rows.map((row) => {
+    if (!row.entity_name) {
+      row.entity_name = resolveEntityName(row.operation, diagramData);
+    }
+    return row;
+  });
 }

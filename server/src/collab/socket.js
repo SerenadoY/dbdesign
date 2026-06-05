@@ -5,6 +5,28 @@ import { mergeDelta } from "./engine.js";
 import { updateDiagram, getDiagramById } from "../models/Diagram.js";
 import { getDb, saveDbToDisk } from "../db/index.js";
 
+function getEntityName(delta, diagramData) {
+  if (delta.action === "create" && delta.data?.[0]) {
+    if (delta.target === "table" || delta.target === "relationship" || delta.target === "area") {
+      return delta.data[0].name || "";
+    }
+    return "";
+  }
+  if (delta.target === "table") {
+    const table = (diagramData.tables || []).find(t => t.id === delta.entityId);
+    return table?.name || "";
+  }
+  if (delta.target === "relationship") {
+    const rel = (diagramData.relationships || []).find(r => r.id === delta.entityId);
+    return rel?.name || "";
+  }
+  if (delta.target === "area") {
+    const area = (diagramData.subjectAreas || []).find(a => a.id === delta.entityId);
+    return area?.name || "";
+  }
+  return "";
+}
+
 export function setupSocketHandlers(io) {
   io.use((socket, next) => {
     const token = socket.handshake.auth.token;
@@ -69,9 +91,10 @@ export function setupSocketHandlers(io) {
 
       // Log operation
       const db = getDb();
+      const entityName = getEntityName(delta, diagramData);
       db.run(
-        "INSERT INTO operation_logs (diagram_id, user_id, operation, version) VALUES (?, ?, ?, ?)",
-        [currentDiagramId, socket.userId, JSON.stringify(delta), newVersion],
+        "INSERT INTO operation_logs (diagram_id, user_id, operation, version, entity_name) VALUES (?, ?, ?, ?, ?)",
+        [currentDiagramId, socket.userId, JSON.stringify(delta), newVersion, entityName],
       );
       saveDbToDisk();
 
