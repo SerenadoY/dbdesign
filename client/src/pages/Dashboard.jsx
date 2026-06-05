@@ -4,7 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import { listDiagrams, createDiagram, deleteDiagram, copyDiagram } from "../api/diagrams";
 import UserMenu from "../components/UserMenu";
 import ReverseEngineeringModal from "../components/ReverseEngineeringModal";
-import { Toast } from "@douyinfe/semi-ui";
+import { Toast, Spin } from "@douyinfe/semi-ui";
 
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
@@ -78,7 +78,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
-        <p style={{ color: "var(--text-muted)" }}>加载中...</p>
+        <Spin size="large" />
       </div>
     );
   }

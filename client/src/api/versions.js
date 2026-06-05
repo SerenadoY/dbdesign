@@ -1,5 +1,10 @@
 import api from "./auth";
 
+export async function getOperations(diagramId, limit = 50) {
+  const { data } = await api.get(`/diagrams/${diagramId}/operations`, { params: { limit } });
+  return data.operations;
+}
+
 export async function listVersions(diagramId) {
   const { data } = await api.get(`/diagrams/${diagramId}/versions`);
   return data.versions;

@@ -220,3 +220,19 @@ export function getCollaborators(diagramId) {
     ),
   );
 }
+
+export function getOperations(diagramId, limit = 50) {
+  const db = getDb();
+  return rowsToArray(
+    db.exec(
+      `SELECT ol.id, ol.version, ol.operation, ol.created_at,
+              u.display_name as user_name
+       FROM operation_logs ol
+       LEFT JOIN users u ON ol.user_id = u.id
+       WHERE ol.diagram_id = ?
+       ORDER BY ol.created_at DESC
+       LIMIT ?`,
+      [diagramId, limit],
+    ),
+  );
+}

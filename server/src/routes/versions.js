@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.js";
 import {
-  saveSnapshot, getVersions, getSnapshot, restoreSnapshot, getDiagramById,
+  saveSnapshot, getVersions, getSnapshot, restoreSnapshot, getDiagramById, getOperations,
 } from "../models/Diagram.js";
 
 const router = Router();
@@ -16,6 +16,18 @@ router.get("/:id/versions", (req, res) => {
     res.json({ versions: list });
   } catch (err) {
     console.error("List versions error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/:id/operations", (req, res) => {
+  try {
+    const diagram = getDiagramById(req.params.id);
+    if (!diagram) return res.status(404).json({ error: "Diagram not found" });
+    const list = getOperations(req.params.id, parseInt(req.query.limit) || 50);
+    res.json({ operations: list });
+  } catch (err) {
+    console.error("List operations error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

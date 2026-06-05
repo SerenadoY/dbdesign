@@ -21,6 +21,7 @@ import {
   useTransform,
 } from "../../../hooks";
 import { databases } from "../../../data/databases";
+import { getDiagram } from "../../../api/diagrams";
 
 const LIMIT = 10;
 
@@ -28,12 +29,13 @@ export default function Versions({ open, title, setTitle }) {
   const { id: diagramId } = useParams();
   const { areas, setAreas } = useAreas();
   const { setLayout } = useLayout();
-  const { database, tables, relationships, setTables, setRelationships } =
+  const { database, tables, relationships, setTables, setRelationships, setDatabase } =
     useDiagram();
   const { notes, setNotes } = useNotes();
   const { types, setTypes } = useTypes();
   const { enums, setEnums } = useEnums();
   const { transform } = useTransform();
+  const { layout, setLayout } = useLayout();
   const { t, i18n } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [versions, setVersions] = useState([]);
@@ -42,11 +44,13 @@ export default function Versions({ open, title, setTitle }) {
   const [loadingVersion, setLoadingVersion] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [versionToCompareTo, setVersionToCompareTo] = useState(null);
+  const [viewedVersion, setViewedVersion] = useState(null);
 
   const loadVersion = useCallback(
     async (versionNum) => {
       try {
         setLoadingVersion(versionNum);
+        setViewedVersion(versionNum);
         const v = await getVersion(diagramId, versionNum);
         setLayout((prev) => ({ ...prev, readOnly: true }));
 
@@ -72,6 +76,25 @@ export default function Versions({ open, title, setTitle }) {
     },
     [diagramId, setTables, setRelationships, setAreas, setNotes, setTypes, setEnums, setTitle, setLayout, database, t],
   );
+
+  const restoreCurrent = useCallback(async () => {
+    try {
+      setViewedVersion(null);
+      const diagram = await getDiagram(diagramId);
+      setLayout((prev) => ({ ...prev, readOnly: false }));
+      const d = diagram;
+      setTables(d.tables || []);
+      setRelationships(d.references || []);
+      setAreas(d.areas || []);
+      setNotes(d.notes || []);
+      setTitle(d.name);
+      if (d.database) setDatabase(d.database);
+      if (databases[d.database]?.hasTypes) setTypes(d.types || []);
+      if (databases[d.database]?.hasEnums) setEnums(d.enums || []);
+    } catch (e) {
+      Toast.error(t("failed_to_load_diagram"));
+    }
+  }, [diagramId, setTables, setRelationships, setAreas, setNotes, setTypes, setEnums, setTitle, setLayout]);
 
   const getRevisions = useCallback(
     async () => {
@@ -153,6 +176,20 @@ export default function Versions({ open, title, setTitle }) {
           {t("record_version")}
         </Button>
       </div>
+
+      {viewedVersion && (
+        <div
+          className="mb-3 rounded-lg p-3 flex items-center justify-between"
+          style={{ backgroundColor: "rgba(0,212,170,0.08)", border: "1px solid rgba(0,212,170,0.2)" }}
+        >
+          <span className="text-xs font-medium" style={{ color: "var(--accent)" }}>
+            正在查看历史版本
+          </span>
+          <Button size="small" theme="solid" onClick={restoreCurrent}>
+            回到当前
+          </Button>
+        </div>
+      )}
 
       {(!diagramId || !versions.length) && !isLoading && (
         <div className="my-3">{t("no_saved_versions")}</div>
