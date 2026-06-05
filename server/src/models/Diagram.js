@@ -270,3 +270,12 @@ export function getOperations(diagramId, limit = 50) {
     return row;
   });
 }
+
+export function deleteSnapshot(diagramId, version) {
+  const db = getDb();
+  const snapshot = getSnapshot(diagramId, version);
+  if (!snapshot) return false;
+  db.run("DELETE FROM version_snapshots WHERE diagram_id = ? AND version = ?", [diagramId, version]);
+  saveDbToDisk();
+  return true;
+}

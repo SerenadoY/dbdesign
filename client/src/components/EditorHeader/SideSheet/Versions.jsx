@@ -8,6 +8,7 @@ import {
   recordVersion,
   getVersion,
   restoreVersion,
+  deleteVersion,
 } from "../../../api/versions";
 import _ from "lodash";
 import { DateTime } from "luxon";
@@ -154,6 +155,19 @@ export default function Versions({ open, title, setTitle }) {
     }
   };
 
+  const handleDeleteVersion = async (versionNum, e) => {
+    e.stopPropagation();
+    if (!confirm("确定删除此版本快照？")) return;
+    try {
+      await deleteVersion(diagramId, versionNum);
+      setVersions((prev) => prev.filter((v) => v.version !== versionNum));
+      if (viewedVersion === versionNum) setViewedVersion(null);
+      Toast.success("已删除");
+    } catch (e) {
+      Toast.error("删除失败");
+    }
+  };
+
   const currentStep = useMemo(() => {
     return versions.findIndex((v) => v.version === selectedVersion);
   }, [selectedVersion, versions]);
@@ -205,6 +219,16 @@ export default function Versions({ open, title, setTitle }) {
                 title={
                   <div className="flex justify-between items-center w-full">
                     <Tag>{r.user_name || t("version") + " #" + r.version}</Tag>
+                    <button
+                      onClick={(e) => handleDeleteVersion(r.version, e)}
+                      className="text-xs opacity-0 group-hover:opacity-100 transition-opacity rounded px-1.5 py-0.5"
+                      style={{ color: "var(--text-muted)" }}
+                      onMouseEnter={(e) => { e.target.style.color = "var(--danger)"; }}
+                      onMouseLeave={(e) => { e.target.style.color = "var(--text-muted)"; }}
+                      title="删除"
+                    >
+                      删除
+                    </button>
                   </div>
                 }
                 description={`${t("committed_at")} ${DateTime.fromISO(r.created_at)

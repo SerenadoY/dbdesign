@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.js";
 import {
-  saveSnapshot, getVersions, getSnapshot, restoreSnapshot, getDiagramById, getOperations,
+  saveSnapshot, getVersions, getSnapshot, restoreSnapshot, deleteSnapshot, getDiagramById, getOperations,
 } from "../models/Diagram.js";
 
 const router = Router();
@@ -73,6 +73,17 @@ router.post("/:id/versions/:version/restore", (req, res) => {
     res.json({ diagramData });
   } catch (err) {
     console.error("Restore version error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/:id/versions/:version", (req, res) => {
+  try {
+    const ok = deleteSnapshot(req.params.id, parseInt(req.params.version));
+    if (!ok) return res.status(404).json({ error: "Version not found" });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete version error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

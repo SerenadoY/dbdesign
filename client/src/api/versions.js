@@ -24,3 +24,8 @@ export async function restoreVersion(diagramId, version) {
   const { data } = await api.post(`/diagrams/${diagramId}/versions/${version}/restore`);
   return data.diagramData;
 }
+
+export async function deleteVersion(diagramId, version) {
+  const { data } = await api.delete(`/diagrams/${diagramId}/versions/${version}`);
+  return data;
+}
