@@ -2,6 +2,7 @@ import { useContext, useState, useRef, useEffect, useCallback, useMemo } from "r
 import { Slot, useExtensions } from "../../context/ExtensionsContext";
 import TableSearch from "../TableSearch";
 import { createPortal } from "react-dom";
+import ShortcutsModal from "../ShortcutsModal";
 import {
   IconCaretdown,
   IconChevronRight,
@@ -102,6 +103,7 @@ export default function ControlPanel({
 
   const [modal, setModal] = useState(MODAL.NONE);
   const [sidesheet, setSidesheet] = useState(SIDESHEET.NONE);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEditName, setShowEditName] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitleValue, setEditTitleValue] = useState("");
@@ -1650,6 +1652,15 @@ export default function ControlPanel({
                 </Button>
               )}
               <Collaborators tables={tables} />
+              <button
+                onClick={() => setShowShortcuts(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-opacity hover:opacity-70"
+                style={{ backgroundColor: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+                title="快捷键"
+              >
+                ?
+              </button>
+              <ShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
               <Slot name="header-actions-end" />
             </div>
           </div>

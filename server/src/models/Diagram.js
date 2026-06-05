@@ -26,7 +26,7 @@ export function getDiagramsByUser(userId) {
       `SELECT d.*, u.display_name as owner_display_name
        FROM diagrams d
        JOIN users u ON d.owner_id = u.id
-       WHERE d.owner_id = ?
+       WHERE d.owner_id = ? AND d.deleted_at IS NULL
        ORDER BY d.updated_at DESC`,
       [userId],
     ),
@@ -37,7 +37,7 @@ export function getDiagramsByUser(userId) {
        FROM diagrams d
        JOIN diagram_collaborators dc ON d.id = dc.diagram_id
        JOIN users u ON d.owner_id = u.id
-       WHERE dc.user_id = ?
+       WHERE dc.user_id = ? AND d.deleted_at IS NULL
        ORDER BY d.updated_at DESC`,
       [userId],
     ),
@@ -48,6 +48,21 @@ export function getDiagramsByUser(userId) {
     seen.add(d.id);
     return true;
   });
+}
+
+export function getTrashedDiagrams(userId) {
+  const db = getDb();
+  return rowsToArray(
+    db.exec(
+      `SELECT d.id, d.title, d.database_type, d.deleted_at, d.updated_at,
+              u.display_name as owner_display_name
+       FROM diagrams d
+       JOIN users u ON d.owner_id = u.id
+       WHERE d.owner_id = ? AND d.deleted_at IS NOT NULL
+       ORDER BY d.deleted_at DESC`,
+      [userId],
+    ),
+  );
 }
 
 export function getDiagramById(id) {
@@ -186,7 +201,19 @@ export function getDiagramByShareToken(token) {
 
 export function deleteDiagram(id) {
   const db = getDb();
+  db.run("UPDATE diagrams SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL", [id]);
+  saveDbToDisk();
+}
+
+export function forceDeleteDiagram(id) {
+  const db = getDb();
   db.run("DELETE FROM diagrams WHERE id = ?", [id]);
+  saveDbToDisk();
+}
+
+export function restoreDiagram(id) {
+  const db = getDb();
+  db.run("UPDATE diagrams SET deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?", [id]);
   saveDbToDisk();
 }
 

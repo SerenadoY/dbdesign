@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.js";
 import {
-  getDiagramsByUser, getDiagramById, createDiagram,
-  updateDiagram, deleteDiagram, copyDiagram, addCollaborator,
+  getDiagramsByUser, getTrashedDiagrams, getDiagramById, createDiagram,
+  updateDiagram, deleteDiagram, forceDeleteDiagram, restoreDiagram, copyDiagram, addCollaborator,
   removeCollaborator, getCollaborators,
 } from "../models/Diagram.js";
 
@@ -101,6 +101,36 @@ router.delete("/:id", (req, res) => {
     res.json({ status: "deleted" });
   } catch (err) {
     console.error("Delete diagram error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/trash", (req, res) => {
+  try {
+    const list = getTrashedDiagrams(req.userId);
+    res.json({ diagrams: list });
+  } catch (err) {
+    console.error("List trash error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/:id/restore", (req, res) => {
+  try {
+    restoreDiagram(req.params.id);
+    res.json({ status: "restored" });
+  } catch (err) {
+    console.error("Restore diagram error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/:id/force", (req, res) => {
+  try {
+    forceDeleteDiagram(req.params.id);
+    res.json({ status: "deleted" });
+  } catch (err) {
+    console.error("Force delete error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

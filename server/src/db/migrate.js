@@ -61,4 +61,5 @@ export function migrate(db) {
   try { db.run("ALTER TABLE diagrams ADD COLUMN version INTEGER NOT NULL DEFAULT 0"); } catch {}
   try { db.run("ALTER TABLE diagrams ADD COLUMN share_token TEXT"); } catch {}
   try { db.run("ALTER TABLE operation_logs ADD COLUMN entity_name TEXT"); } catch {}
+  try { db.run("ALTER TABLE diagrams ADD COLUMN deleted_at DATETIME"); } catch {}
 }

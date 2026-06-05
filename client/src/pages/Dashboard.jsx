@@ -1,9 +1,10 @@
 import { useState, useEffect, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { listDiagrams, createDiagram, deleteDiagram, copyDiagram } from "../api/diagrams";
+import { listDiagrams, createDiagram, deleteDiagram, copyDiagram, getTrashedDiagrams, restoreDiagram, forceDeleteDiagram } from "../api/diagrams";
 import UserMenu from "../components/UserMenu";
 import ReverseEngineeringModal from "../components/ReverseEngineeringModal";
+import SQLImportModal from "../components/SQLImportModal";
 import { Toast, Spin } from "@douyinfe/semi-ui";
 
 export default function Dashboard() {
@@ -11,7 +12,10 @@ export default function Dashboard() {
   const [diagrams, setDiagrams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [trashed, setTrashed] = useState([]);
+  const [showTrash, setShowTrash] = useState(false);
   const [showReverse, setShowReverse] = useState(false);
+  const [showSQLImport, setShowSQLImport] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [search, setSearch] = useState("");
   const [filterDb, setFilterDb] = useState("");
@@ -23,6 +27,7 @@ export default function Dashboard() {
       .then(setDiagrams)
       .catch(console.error)
       .finally(() => setLoading(false));
+    loadTrash();
   }, []);
 
   const handleCreate = async () => {
@@ -56,6 +61,29 @@ export default function Dashboard() {
     return list;
   }, [diagrams, search, filterDb, sortBy]);
 
+  const loadTrash = async () => {
+    try {
+      const list = await getTrashedDiagrams();
+      setTrashed(list);
+    } catch {}
+  };
+
+  const handleRestore = async (id, e) => {
+    e.stopPropagation();
+    await restoreDiagram(id);
+    setTrashed((prev) => prev.filter((d) => d.id !== id));
+    listDiagrams().then(setDiagrams).catch(console.error);
+    Toast.success("已恢复");
+  };
+
+  const handleForceDelete = async (id, e) => {
+    e.stopPropagation();
+    if (!confirm("永久删除后将无法恢复，确定？")) return;
+    await forceDeleteDiagram(id);
+    setTrashed((prev) => prev.filter((d) => d.id !== id));
+    Toast.success("已永久删除");
+  };
+
   const handleCopy = async (id, e) => {
     e.stopPropagation();
     const diagram = await copyDiagram(id);
@@ -72,7 +100,8 @@ export default function Dashboard() {
     if (!confirm("确定删除此设计文稿？")) return;
     await deleteDiagram(id);
     setDiagrams((prev) => prev.filter((d) => d.id !== id));
-    Toast.success("已删除");
+    await loadTrash();
+    Toast.success("已移至回收站");
   };
 
   if (loading) {
@@ -112,6 +141,16 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={() => setShowSQLImport(true)}
+              className="rounded-xl border px-5 py-2 text-sm font-medium transition-all duration-200 hover:opacity-80 active:scale-[0.97]"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              导入 SQL
+            </button>
             <button
               onClick={() => setShowReverse(true)}
               className="rounded-xl border px-5 py-2 text-sm font-medium transition-all duration-200 hover:opacity-80 active:scale-[0.97]"
@@ -343,9 +382,57 @@ export default function Dashboard() {
           </div>
         )}
 
+        {trashed.length > 0 && (
+          <div className="mt-10">
+            <button
+              onClick={() => setShowTrash(!showTrash)}
+              className="flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-70"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <i className={`fa-solid fa-chevron-${showTrash ? "down" : "right"} fa-xs`} />
+              回收站（{trashed.length}）
+            </button>
+            {showTrash && (
+              <div className="mt-3 space-y-2">
+                {trashed.map((d) => (
+                  <div
+                    key={d.id}
+                    className="flex items-center justify-between rounded-xl border px-4 py-3"
+                    style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border)" }}
+                  >
+                    <div>
+                      <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{d.title}</span>
+                      <span className="ml-3 text-xs" style={{ color: "var(--text-muted)" }}>
+                        删除于 {new Date(d.deleted_at).toLocaleString("zh-CN")}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => handleRestore(d.id, e)}
+                        className="rounded-lg border px-3 py-1 text-xs font-medium transition-all hover:opacity-80"
+                        style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+                      >
+                        恢复
+                      </button>
+                      <button
+                        onClick={(e) => handleForceDelete(d.id, e)}
+                        className="rounded-lg border px-3 py-1 text-xs font-medium transition-all hover:opacity-80"
+                        style={{ borderColor: "rgba(239,68,68,0.3)", color: "var(--danger)" }}
+                      >
+                        永久删除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {showReverse && (
           <ReverseEngineeringModal onClose={() => setShowReverse(false)} />
         )}
+        <SQLImportModal open={showSQLImport} onClose={() => setShowSQLImport(false)} />
       </main>
     </div>
   );

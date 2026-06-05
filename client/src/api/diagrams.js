@@ -19,6 +19,20 @@ export async function deleteDiagram(id) {
   await api.delete(`/diagrams/${id}`);
 }
 
+export async function getTrashedDiagrams() {
+  const { data } = await api.get("/diagrams/trash");
+  return data.diagrams;
+}
+
+export async function restoreDiagram(id) {
+  const { data } = await api.post(`/diagrams/${id}/restore`);
+  return data;
+}
+
+export async function forceDeleteDiagram(id) {
+  await api.delete(`/diagrams/${id}/force`);
+}
+
 export async function saveDiagramData(id, diagramData) {
   const { data } = await api.put(`/diagrams/${id}/data`, { diagramData });
   return data;
