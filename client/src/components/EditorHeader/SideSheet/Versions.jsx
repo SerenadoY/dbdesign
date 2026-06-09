@@ -29,14 +29,13 @@ const LIMIT = 10;
 export default function Versions({ open, title, setTitle }) {
   const { id: diagramId } = useParams();
   const { areas, setAreas } = useAreas();
-  const { setLayout } = useLayout();
+  const { layout, setLayout } = useLayout();
   const { database, tables, relationships, setTables, setRelationships, setDatabase } =
     useDiagram();
   const { notes, setNotes } = useNotes();
   const { types, setTypes } = useTypes();
   const { enums, setEnums } = useEnums();
   const { transform } = useTransform();
-  const { layout, setLayout } = useLayout();
   const { t, i18n } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [versions, setVersions] = useState([]);

@@ -3,13 +3,13 @@ import { useLayoutEffect, useContext } from "react";
 import Editor from "./pages/Editor";
 import BugReport from "./pages/BugReport";
 import Templates from "./pages/Templates";
-import LandingPage from "./pages/LandingPage";
 import SettingsContextProvider from "./context/SettingsContext";
 import AuthContextProvider, { AuthContext } from "./context/AuthContext";
-import NotFound from "./pages/NotFound";
+import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import NotFound from "./pages/NotFound";
 import SharedDiagram from "./pages/SharedDiagram";
 
 function ProtectedRoute({ children }) {
