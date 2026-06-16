@@ -6,7 +6,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { existsSync } from "fs";
 import { config } from "./config.js";
-import { initDb } from "./db/index.js";
+import { initDb, saveDbToDiskImmediate } from "./db/index.js";
 import authRoutes from "./routes/auth.js";
 import diagramRoutes from "./routes/diagrams.js";
 import userRoutes from "./routes/users.js";
@@ -61,5 +61,13 @@ initDb()
     httpServer.listen(config.port, () => {
       console.log(`DBDesign server running on port ${config.port}`);
     });
+
+    const shutdown = () => {
+      console.log("Shutting down, flushing database...");
+      saveDbToDiskImmediate();
+      process.exit(0);
+    };
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
   })
   .catch((e) => { console.error("Failed to initialize database:", e); process.exit(1); });

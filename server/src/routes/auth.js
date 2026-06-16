@@ -4,7 +4,35 @@ import { authMiddleware, generateToken } from "../middleware/auth.js";
 
 const router = Router();
 
-router.post("/register", (req, res) => {
+const rateLimitStore = new Map();
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000;
+
+function rateLimiter(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const record = rateLimitStore.get(ip);
+
+  if (!record || now > record.resetTime) {
+    rateLimitStore.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return next();
+  }
+
+  record.count++;
+  if (record.count > RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: "请求过于频繁，请15分钟后再试" });
+  }
+  next();
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitStore) {
+    if (now > record.resetTime) rateLimitStore.delete(ip);
+  }
+}, RATE_LIMIT_WINDOW);
+
+router.post("/register", rateLimiter, (req, res) => {
   try {
     const { username, password, displayName } = req.body;
     if (!username || !password) {
@@ -29,7 +57,7 @@ router.post("/register", (req, res) => {
   }
 });
 
-router.post("/login", (req, res) => {
+router.post("/login", rateLimiter, (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) {

@@ -27,13 +27,31 @@ export async function initDb() {
   }
 
   migrate(db);
-  saveDbToDisk();
+  saveDbToDiskImmediate();
   return db;
+}
+
+let debounceTimer = null;
+const DEBOUNCE_MS = 500;
+
+export function saveDbToDiskImmediate() {
+  if (!db) return;
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  const data = db.export();
+  const buffer = Buffer.from(data);
+  writeFileSync(config.databaseUrl, buffer);
 }
 
 export function saveDbToDisk() {
   if (!db) return;
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  writeFileSync(config.databaseUrl, buffer);
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null;
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    writeFileSync(config.databaseUrl, buffer);
+  }, DEBOUNCE_MS);
 }

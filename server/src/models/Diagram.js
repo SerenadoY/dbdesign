@@ -235,6 +235,15 @@ export function removeCollaborator(diagramId, userId) {
   saveDbToDisk();
 }
 
+export function updateCollaboratorRole(diagramId, userId, role) {
+  const db = getDb();
+  db.run(
+    "UPDATE diagram_collaborators SET role = ? WHERE diagram_id = ? AND user_id = ? AND role != 'owner'",
+    [role, diagramId, userId],
+  );
+  saveDbToDisk();
+}
+
 export function getCollaborators(diagramId) {
   const db = getDb();
   return rowsToArray(

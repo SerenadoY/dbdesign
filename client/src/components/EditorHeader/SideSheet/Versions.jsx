@@ -22,9 +22,36 @@ import {
   useTransform,
 } from "../../../hooks";
 import { databases } from "../../../data/databases";
-import { getDiagram } from "../../../api/diagrams";
+import { getDiagram, getDiagramOperations } from "../../../api/diagrams";
 
 const LIMIT = 10;
+
+const TARGET_LABELS = {
+  table: "表",
+  field: "字段",
+  relationship: "关系",
+  note: "备注",
+  area: "区域",
+  database: "数据库",
+};
+
+const OP_LABELS = {
+  create: "创建",
+  delete: "删除",
+  update: "更新",
+};
+
+function getOpLabel(op, entityName) {
+  try {
+    const parsed = typeof op === "string" ? JSON.parse(op) : op;
+    const target = TARGET_LABELS[parsed?.target] || parsed?.target || "";
+    const action = OP_LABELS[parsed?.action] || parsed?.action || "";
+    const name = entityName || "";
+    return `${action}${target} ${name}`.trim();
+  } catch {
+    return "操作";
+  }
+}
 
 export default function Versions({ open, title, setTitle }) {
   const { id: diagramId } = useParams();
@@ -45,6 +72,9 @@ export default function Versions({ open, title, setTitle }) {
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [versionToCompareTo, setVersionToCompareTo] = useState(null);
   const [viewedVersion, setViewedVersion] = useState(null);
+  const [activeTab, setActiveTab] = useState("versions");
+  const [operations, setOperations] = useState([]);
+  const [opsLoading, setOpsLoading] = useState(false);
 
   const loadVersion = useCallback(
     async (versionNum) => {
@@ -171,23 +201,65 @@ export default function Versions({ open, title, setTitle }) {
     return versions.findIndex((v) => v.version === selectedVersion);
   }, [selectedVersion, versions]);
 
+  const loadOperations = useCallback(async () => {
+    if (!diagramId) return;
+    setOpsLoading(true);
+    try {
+      const list = await getDiagramOperations(diagramId, 100);
+      setOperations(list);
+    } catch {
+      setOperations([]);
+    } finally {
+      setOpsLoading(false);
+    }
+  }, [diagramId]);
+
   useEffect(() => {
     if (diagramId && open) {
       getRevisions();
+      if (activeTab === "operations") {
+        loadOperations();
+      }
     }
-  }, [diagramId, open, getRevisions]);
+  }, [diagramId, open, getRevisions, activeTab, loadOperations]);
 
   return (
     <div className="mx-5 relative h-full">
       <div className="sticky top-0 z-10 sidesheet-theme pb-2">
-        <Button
-          block
-          icon={isRecording ? <Spin /> : <IconPlus />}
-          disabled={isLoading || isRecording}
-          onClick={recordVersionFn}
-        >
-          {t("record_version")}
-        </Button>
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => setActiveTab("versions")}
+            className="flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors"
+            style={{
+              backgroundColor: activeTab === "versions" ? "var(--accent)" : "var(--bg-surface)",
+              color: activeTab === "versions" ? "#fff" : "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            版本快照
+          </button>
+          <button
+            onClick={() => { setActiveTab("operations"); loadOperations(); }}
+            className="flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors"
+            style={{
+              backgroundColor: activeTab === "operations" ? "var(--accent)" : "var(--bg-surface)",
+              color: activeTab === "operations" ? "#fff" : "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            操作记录
+          </button>
+        </div>
+        {activeTab === "versions" && (
+          <Button
+            block
+            icon={isRecording ? <Spin /> : <IconPlus />}
+            disabled={isLoading || isRecording}
+            onClick={recordVersionFn}
+          >
+            {t("record_version")}
+          </Button>
+        )}
       </div>
 
       {viewedVersion && (
@@ -204,51 +276,91 @@ export default function Versions({ open, title, setTitle }) {
         </div>
       )}
 
-      {(!diagramId || !versions.length) && !isLoading && (
-        <div className="my-3">{t("no_saved_versions")}</div>
+      {activeTab === "versions" && (
+        <>
+          {(!diagramId || !versions.length) && !isLoading && (
+            <div className="my-3">{t("no_saved_versions")}</div>
+          )}
+          {diagramId && (
+            <div className="my-2 overflow-y-auto">
+              <Steps direction="vertical" type="basic" current={currentStep}>
+                {versions.map((r) => (
+                  <Steps.Step
+                    key={r.version}
+                    onClick={() => loadVersion(r.version)}
+                    className="group hover-1 first:!pt-2"
+                    title={
+                      <div className="flex justify-between items-center w-full">
+                        <Tag>{r.user_name || t("version") + " #" + r.version}</Tag>
+                        <button
+                          onClick={(e) => handleDeleteVersion(r.version, e)}
+                          className="text-xs opacity-0 group-hover:opacity-100 transition-opacity rounded px-1.5 py-0.5"
+                          style={{ color: "var(--text-muted)" }}
+                          onMouseEnter={(e) => { e.target.style.color = "var(--danger)"; }}
+                          onMouseLeave={(e) => { e.target.style.color = "var(--text-muted)"; }}
+                          title="删除"
+                        >
+                          删除
+                        </button>
+                      </div>
+                    }
+                    description={`${t("committed_at")} ${DateTime.fromISO(r.created_at)
+                      .setLocale(i18n.language)
+                      .toLocaleString(DateTime.DATETIME_MED)}`}
+                    icon={
+                      r.version === loadingVersion ? (
+                        <Spin size="small" />
+                      ) : (
+                        <i className="text-sm fa-solid fa-asterisk ms-1" />
+                      )
+                    }
+                  />
+                ))}
+              </Steps>
+            </div>
+          )}
+          {isLoading && !isRecording && (
+            <div className="text-blue-500 text-center my-3">
+              <Spin size="middle" />
+              <div>{t("loading")}</div>
+            </div>
+          )}
+        </>
       )}
-      {diagramId && (
+      {activeTab === "operations" && (
         <div className="my-2 overflow-y-auto">
-          <Steps direction="vertical" type="basic" current={currentStep}>
-            {versions.map((r) => (
-              <Steps.Step
-                key={r.version}
-                onClick={() => loadVersion(r.version)}
-                className="group hover-1 first:!pt-2"
-                title={
-                  <div className="flex justify-between items-center w-full">
-                    <Tag>{r.user_name || t("version") + " #" + r.version}</Tag>
-                    <button
-                      onClick={(e) => handleDeleteVersion(r.version, e)}
-                      className="text-xs opacity-0 group-hover:opacity-100 transition-opacity rounded px-1.5 py-0.5"
-                      style={{ color: "var(--text-muted)" }}
-                      onMouseEnter={(e) => { e.target.style.color = "var(--danger)"; }}
-                      onMouseLeave={(e) => { e.target.style.color = "var(--text-muted)"; }}
-                      title="删除"
-                    >
-                      删除
-                    </button>
-                  </div>
-                }
-                description={`${t("committed_at")} ${DateTime.fromISO(r.created_at)
+          {opsLoading && (
+            <div className="text-center my-3">
+              <Spin size="small" />
+            </div>
+          )}
+          {!opsLoading && operations.length === 0 && (
+            <div className="my-3 text-sm" style={{ color: "var(--text-muted)" }}>
+              暂无操作记录
+            </div>
+          )}
+          {!opsLoading && operations.map((op) => (
+            <div
+              key={op.id}
+              className="flex items-center py-2 px-2 rounded-lg mb-1 transition-colors hover-1"
+              style={{ borderBottom: "1px solid var(--border)" }}
+            >
+              <i className="block fa-regular fa-circle fa-xs" style={{ color: "var(--text-muted)" }} />
+              <div className="ms-2 flex-1 min-w-0">
+                <span className="text-sm" style={{ color: "var(--text-primary)" }}>
+                  {getOpLabel(op.operation, op.entity_name)}
+                </span>
+                <span className="ms-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                  {op.user_name || ""}
+                </span>
+              </div>
+              <span className="text-xs whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                {DateTime.fromISO(op.created_at)
                   .setLocale(i18n.language)
-                  .toLocaleString(DateTime.DATETIME_MED)}`}
-                icon={
-                  r.version === loadingVersion ? (
-                    <Spin size="small" />
-                  ) : (
-                    <i className="text-sm fa-solid fa-asterisk ms-1" />
-                  )
-                }
-              />
-            ))}
-          </Steps>
-        </div>
-      )}
-      {isLoading && !isRecording && (
-        <div className="text-blue-500 text-center my-3">
-          <Spin size="middle" />
-          <div>{t("loading")}</div>
+                  .toRelative()}
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </div>

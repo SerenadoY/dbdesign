@@ -205,7 +205,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>我的设计文稿</h2>
             <span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}>
-              共 {filtered.length} 个
+              {search || filterDb ? `显示 ${filtered.length} / ${diagrams.length} 个` : `共 ${filtered.length} 个`}
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -249,14 +249,27 @@ export default function Dashboard() {
             <input type="text" value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="搜索文稿名称..."
-              className="w-full rounded-xl border px-10 py-2.5 text-sm outline-none transition-all duration-200"
+              className="w-full rounded-xl border py-2.5 text-sm outline-none transition-all duration-200"
               style={{
                 backgroundColor: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-primary)",
+                paddingLeft: "2.5rem", paddingRight: search ? "2.25rem" : "1rem",
               }}
               onFocus={(e) => { e.target.style.borderColor = "var(--accent)"; }}
               onBlur={(e) => { e.target.style.borderColor = "var(--border)"; }}
               aria-label="搜索文稿"
             />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 transition-colors hover:opacity-70"
+                style={{ color: "var(--text-muted)" }}
+                aria-label="清除搜索"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
           <select value={filterDb}
             onChange={(e) => setFilterDb(e.target.value)}
@@ -349,7 +362,12 @@ export default function Dashboard() {
                 <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: "var(--text-muted)" }} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
                 </svg>
-                <p style={{ color: "var(--text-muted)" }}>没有匹配的文稿</p>
+                <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                  没有匹配「{search}」的文稿
+                </p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  试试其他关键词，或清除筛选条件
+                </p>
                 <button onClick={() => { setSearch(""); setFilterDb(""); }}
                   className="rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 hover:opacity-80"
                   style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}

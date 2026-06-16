@@ -3,7 +3,7 @@ import { authMiddleware } from "../middleware/auth.js";
 import {
   getDiagramsByUser, getTrashedDiagrams, getDiagramById, createDiagram,
   updateDiagram, deleteDiagram, forceDeleteDiagram, restoreDiagram, copyDiagram, addCollaborator,
-  removeCollaborator, getCollaborators,
+  removeCollaborator, getCollaborators, updateCollaboratorRole,
 } from "../models/Diagram.js";
 
 const router = Router();
@@ -162,6 +162,20 @@ router.delete("/:id/collaborators/:userId", (req, res) => {
     res.json({ status: "removed" });
   } catch (err) {
     console.error("Remove collaborator error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/:id/collaborators/:userId", (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!role || !["editor", "viewer"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role. Must be 'editor' or 'viewer'" });
+    }
+    updateCollaboratorRole(req.params.id, parseInt(req.params.userId), role);
+    res.json({ status: "updated" });
+  } catch (err) {
+    console.error("Update collaborator role error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -27,7 +27,37 @@ function getEntityName(delta, diagramData) {
   return "";
 }
 
+const socketRateLimitStore = new Map();
+const SOCKET_RATE_LIMIT_MAX = 5;
+const SOCKET_RATE_LIMIT_WINDOW = 15 * 60 * 1000;
+
+function socketRateLimiter(socket, next) {
+  const ip = socket.handshake.address;
+  const now = Date.now();
+  const record = socketRateLimitStore.get(ip);
+
+  if (!record || now > record.resetTime) {
+    socketRateLimitStore.set(ip, { count: 1, resetTime: now + SOCKET_RATE_LIMIT_WINDOW });
+    return next();
+  }
+
+  record.count++;
+  if (record.count > SOCKET_RATE_LIMIT_MAX) {
+    return next(new Error("请求过于频繁，请15分钟后再试"));
+  }
+  next();
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of socketRateLimitStore) {
+    if (now > record.resetTime) socketRateLimitStore.delete(ip);
+  }
+}, SOCKET_RATE_LIMIT_WINDOW);
+
 export function setupSocketHandlers(io) {
+  io.use(socketRateLimiter);
+
   io.use((socket, next) => {
     const token = socket.handshake.auth.token;
     if (!token) return next(new Error("Authentication required"));

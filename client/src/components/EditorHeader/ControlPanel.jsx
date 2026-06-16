@@ -768,8 +768,7 @@ export default function ControlPanel({
   };
   const save = async () => {
     if (typeof extensions.cloudSave === "function") {
-      // TODO: dont have blank here have null
-      const isNew = diagramId === 'blank';
+      const isNew = diagramId == null;
       const newId = isNew ? crypto.randomUUID() : diagramId;
       const diagramData = {
         diagramId: newId,
@@ -917,7 +916,7 @@ export default function ControlPanel({
             setUndoStack([]);
             setRedoStack([]);
             setGistId("");
-            navigate("/editor/templates/blank", { replace: true });
+            navigate("/editor", { replace: true });
           } catch {
             Toast.error(t("oops_smth_went_wrong"));
           }
@@ -1641,15 +1640,25 @@ export default function ControlPanel({
                 返回工作台
               </Button>
               {!isTemplate && (
-                <Button
-                  type="primary"
-                  className="!text-base !pe-6 !ps-5 !py-[18px] !rounded-md"
-                  size="default"
-                  icon={<IconShareStroked />}
-                  onClick={() => setModal(MODAL.SHARE)}
-                >
-                  {t("share")}
-                </Button>
+                <>
+                  <Button
+                    type="secondary"
+                    className="!text-base !pe-6 !ps-5 !py-[18px] !rounded-md"
+                    size="default"
+                    onClick={() => setSidesheet(SIDESHEET.VERSIONS)}
+                  >
+                    版本历史
+                  </Button>
+                  <Button
+                    type="primary"
+                    className="!text-base !pe-6 !ps-5 !py-[18px] !rounded-md"
+                    size="default"
+                    icon={<IconShareStroked />}
+                    onClick={() => setModal(MODAL.SHARE)}
+                  >
+                    {t("share")}
+                  </Button>
+                </>
               )}
               <Collaborators tables={tables} />
               <button

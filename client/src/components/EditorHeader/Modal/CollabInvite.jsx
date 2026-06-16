@@ -4,6 +4,7 @@ import {
   getCollaborators,
   addCollaborator,
   removeCollaborator,
+  updateCollaboratorRole,
 } from "../../../api/diagrams";
 import { getShareToken, revokeShareToken } from "../../../api/share";
 import { useParams } from "react-router-dom";
@@ -21,7 +22,7 @@ function hashColor(str) {
   return COLORS[Math.abs(hash) % COLORS.length];
 }
 
-export default function CollabInvite({ setModal }) {
+export default function CollabInvite() {
   const { id: diagramId } = useParams();
   const [collaborators, setCollaborators] = useState([]);
   const [query, setQuery] = useState("");
@@ -109,6 +110,15 @@ export default function CollabInvite({ setModal }) {
       await loadCollaborators();
     } catch (err) {
       console.error("Failed to remove collaborator:", err);
+    }
+  };
+
+  const handleRoleChange = async (user, newRole) => {
+    try {
+      await updateCollaboratorRole(diagramId, user.id, newRole);
+      await loadCollaborators();
+    } catch (err) {
+      console.error("Failed to update role:", err);
     }
   };
 
@@ -270,24 +280,36 @@ export default function CollabInvite({ setModal }) {
                     style={{ backgroundColor: "rgba(0,212,170,0.1)", color: "var(--accent)" }}
                   >创建者</span>
                 )}
-                {c.role === "editor" && (
-                  <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
-                    style={{ backgroundColor: "rgba(59,130,246,0.1)", color: "#3b82f6" }}
-                  >编辑者</span>
-                )}
               </div>
             </div>
-            {c.role !== "owner" && (
-              <button
-                onClick={() => handleRemove(c)}
-                className="text-xs transition-colors"
-                style={{ color: "var(--text-muted)" }}
-                onMouseEnter={(e) => { e.target.style.color = "var(--danger)"; }}
-                onMouseLeave={(e) => { e.target.style.color = "var(--text-muted)"; }}
-              >
-                移除
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {c.role !== "owner" ? (
+                <>
+                  <select
+                    value={c.role}
+                    onChange={(e) => handleRoleChange(c, e.target.value)}
+                    className="text-xs rounded px-2 py-1 outline-none cursor-pointer"
+                    style={{
+                      backgroundColor: "var(--bg-primary)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    <option value="editor">编辑者</option>
+                    <option value="viewer">查看者</option>
+                  </select>
+                  <button
+                    onClick={() => handleRemove(c)}
+                    className="text-xs transition-colors"
+                    style={{ color: "var(--text-muted)" }}
+                    onMouseEnter={(e) => { e.target.style.color = "var(--danger)"; }}
+                    onMouseLeave={(e) => { e.target.style.color = "var(--text-muted)"; }}
+                  >
+                    移除
+                  </button>
+                </>
+              ) : null}
+            </div>
           </div>
         ))}
       </div>

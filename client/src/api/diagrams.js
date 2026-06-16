@@ -61,3 +61,18 @@ export async function copyDiagram(id) {
 export async function removeCollaborator(diagramId, userId) {
   await api.delete(`/diagrams/${diagramId}/collaborators/${userId}`);
 }
+
+export async function updateCollaboratorRole(diagramId, userId, role) {
+  const { data } = await api.put(`/diagrams/${diagramId}/collaborators/${userId}`, { role });
+  return data;
+}
+
+export async function getDiagramVersions(diagramId) {
+  const { data } = await api.get(`/diagrams/${diagramId}/versions`);
+  return data.versions;
+}
+
+export async function getDiagramOperations(diagramId, limit = 50) {
+  const { data } = await api.get(`/diagrams/${diagramId}/operations`, { params: { limit } });
+  return data.operations;
+}

@@ -73,7 +73,6 @@ export function fromOracleSQL(ast, diagramDb = DB.GENERIC) {
               field.increment = true;
             }
 
-            // TODO: reconstruct default when implemented in parser
             if (d.default) {
               field.default = JSON.stringify(d.default.expr);
             }
